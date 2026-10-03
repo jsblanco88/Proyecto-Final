@@ -20,6 +20,9 @@ router.use(esAdmin);
 
 router.get('/productos', inventarioController.getProductos);
 router.post('/productos', inventarioController.createProducto);
+router.patch('/productos/:id/toggle-agotado', inventarioController.toggleAgotado);
+router.patch('/productos/:id/reponer', inventarioController.reponerInsumo);
+router.get('/lista-compras', inventarioController.getListaCompras);
 router.post('/compras', inventarioController.registrarCompra);
 router.get('/metricas-consumo', inventarioController.getMetricasConsumo);
 router.get('/proveedores', inventarioController.getProveedores);

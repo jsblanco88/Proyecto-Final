@@ -63,49 +63,70 @@ Tal como se define en los diagramas de procesos, tanto el **Masajista** como el 
 ### Significado de los Colores
 - 🟢 **Verde (Disponible)**: Bloque libre para agendar.
 - 🟡 **Amarillo (Reservado / Pendiente de Confirmación)**: Cita agendada, en espera de que el masajista confirme la sala.
-- 🔵 **Azul (Confirmado)**: Cita ratificada por el masajista. **Solo el Administrador puede cancelarla o liberarla.**
+- 🔵 **Azul (Confirmado)**: Cita ratificada por el masajista. **Solo el Administrador puede cambiar su horario o cancelarla.**
 - 🔴 **Rojo (Ocupado)**: Sesión en curso en la sala.
 
 ---
 
 ## 3. Guía Operativa para Masajistas / Terapeutas
 
-### 3.1. Cómo Reservar una Sala
+### 3.1. Cómo Reservar y Gestionar Clientes Individuales
 1. Ingrese a la vista de **"Reservas (Salas)"**.
-2. Seleccione la fecha deseada.
-3. Haga clic sobre la celda 🟢 **Verde (Disponible)** de la sala (`Agua`, `Aire`, `Tierra` o `Fuego`) y horario de preferencia.
-4. Seleccione el cliente, tratamiento y confirme. La celda cambiará a 🟡 **Amarillo (Reservado)**.
+2. Seleccione la fecha deseada en el Navbar o en el selector.
+3. Haga clic sobre la celda 🟢 **Verde (Disponible)** de la sala (`Agua`, `Aire`, `Tierra` o `Fuego`) y horario.
+4. En el modal de reserva:
+   - Su perfil de masajista quedará fijado automáticamente.
+   - Seleccione a su cliente individual en el menú desplegable. Si es un cliente nuevo, use el botón **`➕ Nuevo Cliente`** para darlo de alta de inmediato.
+   - Ingrese el servicio y notas clínicas. Al enviar, la celda cambiará a 🟡 **Amarillo (Reservado)**.
 
 ### 3.2. Reglas Obligatorias de Confirmación de Sala
+- **Confirmación Individual**: Cada masajista debe confirmar sus propias reservas antes de atender al cliente.
 - **Reservas Estándar (con más de 1 hora de anticipación)**:
-  - El masajista debe ingresar a la plataforma y presionar el botón **"Confirmar Sala"** a más tardar **1 hora antes del inicio de la cita**.
-  - *Ejemplo*: Para una cita de las `16:00`, debe confirmarse antes de las `15:00`.
-  - ⚠️ **Liberación Automática**: Si llega la hora límite sin confirmación, el sistema libera la reserva automáticamente para que otro terapeuta o cliente pueda utilizar la sala.
-- **Reservas Express / Última Hora (creadas con 1 hora o menos de anticipación)**:
-  - Si la reserva se genera faltando menos de una hora para la cita, el masajista dispone de **20 minutos exactos** desde el momento de la reserva para confirmarla.
-  - ⚠️ **Liberación Automática**: Si no se confirma en 20 minutos, la sala se libera de inmediato.
+  - El masajista debe pulsar el botón **"✓ Confirmar Sala"** a más tardar **1 hora antes del inicio de la cita**.
+  - ⚠️ **Liberación Automática**: Si vence el plazo sin confirmación, el sistema libera la sala automáticamente a 🟢 **Disponible**.
+- **Reservas Express / Última Hora (creadas con <= 1 hora de anticipación)**:
+  - Dispone de **20 minutos exactos** desde el momento de la creación para presionar **"✓ Confirmar Sala"**.
+
+### 3.3. Privacidad y Bloqueo de Citas Confirmadas
+- **Privacidad**: En la matriz de reservas, usted **solo verá el nombre de su cliente**. Las reservas de otros masajistas se mostrarán protegidas como `👤 [Cliente Reservado]`.
+- **Bloqueo**: Una vez confirmada la cita (🔵 **Azul**), no podrá cambiar el horario ni cancelarla directamente; si el cliente solicita reprogramar o cancelar, debe solicitarlo al **Administrador**.
 
 ---
 
 ## 4. Guía Operativa para el Administrador
 
-### 4.1. Liberación Exclusiva de Horarios Confirmados
-- Por seguridad y control operativo, **únicamente el usuario con rol de Administrador puede liberar o cancelar un horario que ya se encuentre en estado 🔵 Confirmado**.
-- **Pasos para el Administrador**:
-  1. Acceda a la matriz de salas o al **Historial de Citas**.
-  2. Seleccione la cita confirmada que requiere cancelación o modificación.
-  3. Presione el botón **"Liberar Horario Confirmado (Admin)"**.
-  4. Ingrese el motivo de la cancelación. La sala retornará automáticamente a 🟢 **Disponible**.
+### 4.1. Reprogramación y Cancelación Exclusiva de Citas Confirmadas
+- **Solo el Administrador** tiene autorización para modificar citas en estado 🔵 **Confirmado**:
+  - **⏰ Cambiar Horario**: Haga clic sobre la cita confirmada y presione el botón para reprogramar la fecha, hora o sala (el sistema verificará que no exista colisión).
+  - **🗑️ Cancelar / Liberar (Admin)**: Haga clic en liberar, ingrese la justificación y la sala regresará de inmediato a 🟢 **Disponible**.
 
-### 4.2. Control de Inventario y Compras de Insumos (Módulo 2)
+### 4.2. Registro y Alta de Nuevos Masajistas
+- **Exclusivo Administrador**: Solo el administrador puede crear nuevos terapeutas.
+  1. En la vista de **Reservas**, haga clic en el botón superior **`💆 Nuevo Masajista (Admin)`** (o dentro del modal de reserva).
+  2. Complete el nombre, correo electrónico de acceso, contraseña inicial y especialidad.
+  3. El nuevo masoterapeuta podrá iniciar sesión de inmediato con su cuenta individual.
+
+### 4.3. Control de Insumos y Lista de la Compra (Módulo 2)
 1. Ingrese a **"Inventario"** en el menú lateral.
-2. Monitoree las existencias de aceites, cremas, toallas y esencias por sala temática.
-3. Registre compras a proveedores para reabastecer stock.
-4. Revise las gráficas de consumo vinculadas a las citas completadas.
+2. **Marcar Insumos Agotados**: En el catálogo general de insumos, presione el botón **`🚨 Marcar Agotado`** sobre cualquier producto que requiera reposición.
+3. **Lista de la Compra**: Los productos marcados como agotados se integran automáticamente en el panel superior **"Lista de la Compra"**.
+4. **Imprimir / Copiar**: Puede copiar o imprimir la lista con el botón **`🖨️ Imprimir / Copiar Lista`**.
+5. **Reposición**: Al comprar o reponer los insumos, presione **`✓ Marcar Repuesto / En Stock`** para devolver el insumo al estado disponible.
+
+### 4.4. Monitor de Desempeño y KPIs de Masajistas (Dashboard)
+1. Ingrese a **"Dashboard"** en el menú lateral como Administrador.
+2. Visualice la tabla ejecutiva **"Desempeño y KPIs del Equipo de Masajistas"**:
+   - Total de citas asignadas a cada terapeuta.
+   - Desglose por estados: Completadas (🟢), Confirmadas (🔵), Pendientes (🟡) y Canceladas/Liberadas (🔴).
+   - Facturación / Ingresos totales aportados por cada terapeuta.
+   - Indicador y barra visual de **Tasa de Efectividad (%)**.
 
 ---
 
 ## 5. Portal Público y Ficha de Clientes
 
 - **Público General**: Consulta catálogo de terapias en las salas Agua, Aire, Tierra y Fuego y solicita turnos.
-- **Ficha Cliente**: Expediente con notas de alergias, zonas corporales prioritarias e historial completo de visitas.
+- **Ficha y Expediente de Clientes**: 
+  - Cada ficha contiene exclusivamente: **Nombre y Apellidos**, **Teléfono** (**Obligatorio**) y **Correo Electrónico** (opcional), además del historial de citas asociadas.
+  - Los masajistas visualizan y gestionan únicamente los clientes creados o atendidos por ellos.
+  - El Administrador cuenta con visualización y búsqueda global sobre todos los clientes del centro.

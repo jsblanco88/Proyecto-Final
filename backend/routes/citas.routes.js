@@ -30,6 +30,12 @@ router.post('/citas', verificarToken, citasController.createReserva);
 // Confirmación de sala por masajista (plazos 1h / 20min)
 router.patch('/citas/:id/confirmar', verificarToken, citasController.confirmarSala);
 
+// Reprogramar horario y sala (Si confirmada: exclusivo Admin; si pendiente: terapeuta o Admin)
+router.patch('/citas/:id/reprogramar', verificarToken, citasController.reprogramarCita);
+
+// Cancelar cita (Si confirmada: exclusivo Admin; si pendiente: terapeuta o Admin)
+router.patch('/citas/:id/cancelar', verificarToken, citasController.cancelarCita);
+
 // Liberación / Cancelación de cita confirmada (EXCLUSIVO ADMINISTRADOR)
 router.patch('/citas/:id/liberar', verificarToken, esAdmin, citasController.liberarCitaConfirmada);
 

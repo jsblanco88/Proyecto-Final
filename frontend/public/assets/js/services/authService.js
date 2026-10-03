@@ -67,5 +67,15 @@ const authService = {
   async getMasajistas() {
     const res = await apiClient.get('/auth/masajistas');
     return res.masajistas || [];
+  },
+
+  /**
+   * Registra un nuevo masajista en el sistema (Exclusivo Administrador)
+   * @param {Object} datosMasajista 
+   * @returns {Promise<Object>}
+   */
+  async createMasajista(datosMasajista) {
+    const res = await apiClient.post('/auth/masajistas', datosMasajista);
+    return res;
   }
 };

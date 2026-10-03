@@ -73,6 +73,48 @@
             </div>
           </div>
         </div>
+
+        <!-- SECCIÓN EXCLUSIVA ADMINISTRADOR: LISTA Y KPIS DE MASAJISTAS -->
+        <div id="seccion-admin-masajistas" style="display: none; margin-top: 2.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+              <h2 style="color: var(--dark-color); display: flex; align-items: center; gap: 0.5rem;">
+                <span>💆</span>
+                <span>Desempeño y KPIs del Equipo de Masajistas</span>
+              </h2>
+              <p style="color: #7F8C8D; font-size: 0.9rem;">
+                Métricas individuales de productividad, efectividad de confirmación, citas y facturación
+              </p>
+            </div>
+            <a href="/views/reservas.html" class="btn btn-outline">
+              <span>📅</span>
+              <span>Ver Matriz de Salas</span>
+            </a>
+          </div>
+
+          <!-- Tabla de KPIs de Masajistas -->
+          <div class="data-table-container card" style="padding: 0; overflow-x: auto;">
+            <table class="data-table" style="margin: 0; width: 100%;">
+              <thead>
+                <tr>
+                  <th>Masajista / Terapeuta</th>
+                  <th style="text-align: center;">Citas Totales</th>
+                  <th style="text-align: center;">Completadas (🟢)</th>
+                  <th style="text-align: center;">Confirmadas (🔵)</th>
+                  <th style="text-align: center;">Pendientes (🟡)</th>
+                  <th style="text-align: center;">Canceladas (🔴)</th>
+                  <th style="text-align: right;">Ingresos Generados</th>
+                  <th style="text-align: center;">Tasa Efectividad</th>
+                </tr>
+              </thead>
+              <tbody id="masajistas-kpis-body">
+                <tr>
+                  <td colspan="8" style="text-align: center; color: #7F8C8D; padding: 2rem;">Cargando KPIs del equipo...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -92,7 +134,7 @@
         const res = await dashboardService.getStats();
         if (!res.ok) return;
 
-        // 1. Cargar KPIs
+        // 1. Cargar KPIs Generales
         document.getElementById('kpi-total-citas').textContent = res.kpis.totalCitas;
         document.getElementById('kpi-completadas').textContent = res.kpis.citasCompletadas;
         document.getElementById('kpi-pendientes').textContent = res.kpis.citasPendientes;
@@ -140,6 +182,39 @@
             maintainAspectRatio: false
           }
         });
+
+        // 4. Cargar Sección de Masajistas y KPIs si es Administrador
+        if (res.esAdmin && res.masajistasKpis && res.masajistasKpis.length > 0) {
+          const secAdmin = document.getElementById('seccion-admin-masajistas');
+          secAdmin.style.display = 'block';
+
+          const tbody = document.getElementById('masajistas-kpis-body');
+          tbody.innerHTML = res.masajistasKpis.map(m => {
+            const porcentajeColor = m.tasaEfectividad >= 75 ? '#27AE60' : (m.tasaEfectividad >= 40 ? '#F39C12' : '#E74C3C');
+            return `
+              <tr>
+                <td>
+                  <div style="font-weight: 700; color: #2C3E50;">💆 ${m.nombre}</div>
+                  <div style="font-size: 0.78rem; color: #7F8C8D;">${m.especialidad} • ✉️ ${m.email}</div>
+                </td>
+                <td style="text-align: center; font-weight: 600;">${m.totalCitas}</td>
+                <td style="text-align: center;"><span class="badge badge-verde">${m.citasCompletadas}</span></td>
+                <td style="text-align: center;"><span class="badge badge-azul">${m.citasConfirmadas}</span></td>
+                <td style="text-align: center;"><span class="badge badge-amarillo">${m.citasPendientes}</span></td>
+                <td style="text-align: center;"><span class="badge badge-rojo">${m.citasCanceladas}</span></td>
+                <td style="text-align: right; font-weight: 700; color: #27AE60;">€${parseFloat(m.ingresosGenerados).toFixed(2)}</td>
+                <td style="text-align: center;">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <div style="width: 65px; background: #EAEDED; border-radius: 4px; height: 8px; overflow: hidden;">
+                      <div style="width: ${m.tasaEfectividad}%; background: ${porcentajeColor}; height: 100%;"></div>
+                    </div>
+                    <span style="font-weight: 700; font-size: 0.8rem; color: ${porcentajeColor};">${m.tasaEfectividad}%</span>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
 
       } catch (e) {
         console.error('Error cargando dashboard:', e);

@@ -63,6 +63,12 @@ const Producto = sequelize.define('Producto', {
     defaultValue: 0.00,
     comment: 'Costo unitario promedio de adquisición'
   },
+  agotado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    comment: 'Indica si el insumo está agotado para armar la lista de la compra'
+  },
   activo: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

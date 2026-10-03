@@ -34,9 +34,9 @@ El **Sistema de Gestión Integral de Spa** es una plataforma web modular constru
 
 | Actor | Alcance y Permisos | Responsabilidades Principales |
 | :--- | :--- | :--- |
-| **Público General / Cliente** | Zona Pública | Consulta catálogo de servicios, salas temáticas y solicita reservas. |
-| **Masajista / Masoterapeuta** | Zona Privada (Limitada) | Consulta la matriz de salas (Agua, Aire, Tierra, Fuego), agenda turnos y **confirma sus salas dentro del plazo reglamentario**. No puede liberar citas ya confirmadas. |
-| **Administrador** | Zona Privada (Acceso Total) | Control total de todas las salas, **único autorizado para liberar o cancelar horarios confirmados**, gestión de inventario, compras, usuarios y analítica financiera. |
+| **Público General / Cliente** | Zona Pública | Consulta catálogo de servicios, salas temáticas e información del spa. |
+| **Masajista / Masoterapeuta** | Zona Privada (Individual) | Agenda turnos para sus **clientes individuales**, **confirma sus propias salas** dentro del plazo (1h / 20min) y completa sesiones. **Solo ve el nombre de sus propios clientes** (los demás aparecen protegidos/reservados). No puede crear masajistas ni modificar/cancelar citas confirmadas. |
+| **Administrador** | Zona Privada (Control Total) | Supervisión total de las 4 salas, **visibilidad completa de todos los clientes**, **único autorizado para cambiar horarios o cancelar citas confirmadas**, **único autorizado para crear nuevos masajistas**, control de inventario, compras y analítica financiera. |
 
 ---
 
@@ -60,10 +60,23 @@ El **Sistema de Gestión Integral de Spa** es una plataforma web modular constru
 2. **Regla de Confirmación para Reservas Express / Última Hora (Ventana de 20 Minutos)**:
    - Las reservas que se efectúen con **1 hora o menos de anticipación** respecto al horario de la cita deberán ser confirmadas por el masajista en un **plazo máximo de 20 minutos** desde su creación.
    - Si transcurren los 20 minutos sin confirmación, **la reserva se libera automáticamente**.
-3. **Exclusividad Administrativa sobre Horarios Confirmados**:
-   - Una vez que una reserva pasa al estado **Confirmado**, **ÚNICAMENTE el Administrador tiene autorización para liberar, reasignar o cancelar dicho horario**. Ni el masajista ni el cliente pueden desmarcar un horario confirmado por cuenta propia.
-4. **Estados de Disponibilidad y Semáforo Visual**:
+3. **Exclusividad Administrativa sobre Citas Confirmadas (Horario y Cancelación)**:
+   - Una vez que una reserva pasa al estado 🔵 **Confirmado**, **ÚNICAMENTE el Administrador tiene autorización para cambiar el horario (reprogramar) o cancelar/liberar la cita**. Los masajistas tienen restringida la modificación o anulación de citas confirmadas.
+   - Si la reserva está en estado 🟡 **Pendiente de Confirmación**, el masajista dueño de la cita o el Administrador pueden modificar o cancelar la reserva previa a su ratificación.
+4. **Privacidad de Clientes Individuales**:
+   - Los clientes son atendidos de forma individual por cada masajista.
+   - En la matriz de disponibilidad, **los masajistas solo visualizan el nombre de su cliente asignado**. Para las citas de otros terapeutas, el cliente se muestra anonimizado como `[Cliente Reservado]`.
+   - **Solo el Administrador tiene acceso para ver la totalidad de los nombres y fichas de clientes del centro**.
+5. **Creación y Alta de Masajistas (Exclusivo Administrador)**:
+   - **Únicamente el usuario con rol `admin`** tiene permisos para registrar, crear y dar de alta a nuevos masoterapeutas en la plataforma.
+6. **Estados de Disponibilidad y Semáforo Visual**:
    - 🟢 **Disponible**: Espacio libre para agendar.
    - 🟡 **Reservado (Pendiente de Confirmación)**: Cita agendada sujeta a confirmación en los plazos de 1 hora o 20 minutos.
-   - 🔵 **Confirmado**: Sala ratificada por el masajista. Solo liberable por el Administrador.
+   - 🔵 **Confirmado**: Sala ratificada por el masajista. Modificación o cancelación exclusiva por el Administrador.
    - 🔴 **Ocupado / En Curso**: Sesión en ejecución o sala bloqueada por mantenimiento.
+7. **Campos Exclusivos de la Ficha del Cliente**:
+   - La ficha de cliente contiene estrictamente los datos de **Nombre**, **Teléfono** (**Obligatorio**) y **Correo Electrónico** (opcional).
+8. **Finalización Automática de Citas Confirmadas**:
+   - Todo masaje o cita confirmada/ocupada se **marca automáticamente como completada al finalizar la hora de la cita** (`hora_fin` vencida).
+9. **Control de Insumos y Lista de la Compra**:
+   - El inventario sirve de control de insumos para compra y reposición; el Administrador simplemente marca los productos como agotados para armar la lista de la compra del centro.

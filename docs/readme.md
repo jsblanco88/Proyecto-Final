@@ -21,14 +21,16 @@ El centro cuenta con cuatro salas de atención con ambiente diferenciado:
   - 🔵 **Azul (Confirmado)**: Sala confirmada por el profesional.
   - 🔴 **Rojo (Ocupado)**: Sesión en ejecución o bloqueada.
 
-### ⏱️ Reglas Estrictas de Confirmación y Liberación
-1. **Confirmación Estándar (Plazo de 1 Hora Antes)**:
-   - Toda reserva agendada con más de 1 hora de anticipación debe ser confirmada por el masajista **a más tardar 1 hora antes de la cita**.
-   - De no confirmarse en dicho plazo, el sistema **libera la sala automáticamente**, regresando a estado 🟢 **Disponible**.
-2. **Confirmación Express (20 Minutos para Reservas de Última Hora)**:
-   - Reservas generadas con **1 hora o menos de anticipación** deben ser confirmadas por el masajista en un plazo máximo de **20 minutos**. Si no se confirma, se libera automáticamente.
-3. **Exclusividad del Administrador sobre Horarios Confirmados**:
-   - Una vez que la cita adquiere estado 🔵 **Confirmado**, **ÚNICAMENTE el Administrador** puede cancelar o liberar dicho horario.
+### ⏱️ Reglas Operativas y de Seguridad
+1. **Reservas y Confirmaciones por Masajista (Clientes Individuales)**:
+   - Los masajistas agendan salas para sus clientes individuales y confirman sus propias citas dentro de los plazos reglamentarios (1 hora antes para reservas estándar o 20 minutos para reservas express).
+2. **Control Exclusivo del Administrador sobre Citas Confirmadas**:
+   - Una vez que la cita pasa a 🔵 **Confirmado**, **ÚNICAMENTE el Administrador** tiene autorización para cambiar el horario (reprogramar) o cancelar/liberar la cita.
+3. **Privacidad Estricta de Clientes**:
+   - Cada masajista **únicamente visualiza el nombre de sus propios clientes**. Para turnos de otros terapeutas, el cliente se visualiza como `[Cliente Reservado]`.
+   - El Administrador posee visibilidad global sobre todos los clientes.
+4. **Alta y Creación de Masajistas (Solo Administrador)**:
+   - **ÚNICAMENTE el Administrador** puede registrar y crear nuevas cuentas de masajistas en el sistema.
 
 ### 📝 Estándar de Código Comentado
 - **100% de Código Comentado**: Todo el código fuente del proyecto (Modelos, Controladores, Rutas, Middlewares, Servicios Axios y Vistas) está exhaustivamente documentado para garantizar una lectura intuitiva y facilidad de mantenimiento.

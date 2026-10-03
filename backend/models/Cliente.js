@@ -59,6 +59,11 @@ const Cliente = sequelize.define('Cliente', {
     allowNull: false,
     defaultValue: true,
     comment: 'Estado activo o inactivo del cliente'
+  },
+  creado_por: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'ID del usuario/masajista que registró al cliente'
   }
 }, {
   tableName: 'clientes',

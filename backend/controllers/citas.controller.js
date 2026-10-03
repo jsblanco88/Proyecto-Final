@@ -35,14 +35,19 @@ const BLOQUES_HORARIOS = [
 ];
 
 /**
- * Función auxiliar interna para procesar la liberación automática de reservas
- * vencidas que no fueron confirmadas dentro del plazo estipulado.
+ * Función auxiliar interna para procesar la máquina de estados automática:
+ * 1. Liberación automática de reservas no confirmadas dentro del plazo.
+ * 2. Marcado automático como 'completada' de citas confirmadas/ocupadas al culminar su horario de fin.
  */
-const procesarLiberacionesAutomaticas = async () => {
+const procesarEstadosAutomaticos = async () => {
   try {
     const ahora = new Date();
+    const fechaHoyStr = ahora.toISOString().split('T')[0];
+    const horasStr = String(ahora.getHours()).padStart(2, '0');
+    const minsStr = String(ahora.getMinutes()).padStart(2, '0');
+    const horaActualStr = `${horasStr}:${minsStr}`;
 
-    // Buscar todas las citas pendientes cuyo deadline haya expirado
+    // 1. Buscar todas las citas pendientes cuyo deadline haya expirado y liberarlas
     const citasExpiradas = await Cita.findAll({
       where: {
         estado: 'pendiente_confirmacion',
@@ -60,8 +65,33 @@ const procesarLiberacionesAutomaticas = async () => {
       }
       console.log(`ℹ️ [Sistema de Citas] Se liberaron automáticamente ${citasExpiradas.length} reservas expiradas.`);
     }
+
+    // 2. REGLA: Marcar automáticamente como 'completada' las citas confirmadas u ocupadas al finalizar la hora de la cita
+    const citasParaCompletar = await Cita.findAll({
+      where: {
+        estado: {
+          [Op.in]: ['confirmada', 'ocupada']
+        },
+        [Op.or]: [
+          { fecha: { [Op.lt]: fechaHoyStr } },
+          {
+            fecha: fechaHoyStr,
+            hora_fin: { [Op.lte]: horaActualStr }
+          }
+        ]
+      }
+    });
+
+    if (citasParaCompletar.length > 0) {
+      for (const c of citasParaCompletar) {
+        c.estado = 'completada';
+        await c.save();
+      }
+      console.log(`✅ [Sistema de Citas] Se marcaron automáticamente como completadas ${citasParaCompletar.length} citas al culminar su horario.`);
+    }
+
   } catch (error) {
-    console.error('❌ [CitasController.procesarLiberacionesAutomaticas] Error:', error.message);
+    console.error('❌ [CitasController.procesarEstadosAutomaticos] Error:', error.message);
   }
 };
 
@@ -96,8 +126,8 @@ const getSalas = async (req, res) => {
  */
 const getDisponibilidad = async (req, res) => {
   try {
-    // 1. Ejecutar verificación y liberación de reservas vencidas
-    await procesarLiberacionesAutomaticas();
+    // 1. Ejecutar verificación y liberación/completación automática
+    await procesarEstadosAutomaticos();
 
     // 2. Determinar la fecha consultada (por defecto hoy)
     const fechaConsulta = req.query.fecha || new Date().toISOString().split('T')[0];
@@ -124,6 +154,9 @@ const getDisponibilidad = async (req, res) => {
     });
 
     // 5. Construir la matriz estructurada por bloque horario y sala
+    const esAdmin = req.usuario && req.usuario.rol === 'admin';
+    const usuarioId = req.usuario ? req.usuario.id : null;
+
     const matrizDisponibilidad = BLOQUES_HORARIOS.map(bloque => {
       const filaSalas = {};
 
@@ -149,20 +182,25 @@ const getDisponibilidad = async (req, res) => {
             textoEstado = 'Ocupado';
           }
 
+          // REGLA: Los masajistas solo ven el nombre de su propio cliente. Solo el admin ve todos los nombres.
+          const esMiCita = Boolean(usuarioId && citaEncontrada.usuario_id === usuarioId);
+          const puedeVerNombre = esAdmin || esMiCita;
+
           filaSalas[sala.id] = {
             disponible: false,
             estado: citaEncontrada.estado,
             colorEstado,
             textoEstado,
             citaId: citaEncontrada.id,
-            cliente: citaEncontrada.cliente ? citaEncontrada.cliente.nombre : 'Cliente',
-            clienteId: citaEncontrada.cliente_id,
-            clienteTelefono: citaEncontrada.cliente ? citaEncontrada.cliente.telefono : '',
+            cliente: puedeVerNombre ? (citaEncontrada.cliente ? citaEncontrada.cliente.nombre : 'Cliente') : 'Cliente Reservado',
+            clienteId: puedeVerNombre ? citaEncontrada.cliente_id : null,
+            clienteTelefono: puedeVerNombre && citaEncontrada.cliente ? citaEncontrada.cliente.telefono : '',
             masajista: citaEncontrada.masajista ? citaEncontrada.masajista.nombre : 'Terapeuta',
             masajistaId: citaEncontrada.usuario_id,
             servicio: citaEncontrada.servicio_solicitado,
-            monto: citaEncontrada.monto_cobrado,
-            deadlineConfirmacion: citaEncontrada.deadline_confirmacion
+            monto: puedeVerNombre ? citaEncontrada.monto_cobrado : null,
+            deadlineConfirmacion: citaEncontrada.deadline_confirmacion,
+            esMiCita: esMiCita
           };
         } else {
           // Bloque totalmente libre
@@ -173,7 +211,8 @@ const getDisponibilidad = async (req, res) => {
             textoEstado: 'Disponible',
             citaId: null,
             cliente: null,
-            masajista: null
+            masajista: null,
+            esMiCita: false
           };
         }
       });
@@ -223,8 +262,12 @@ const createReserva = async (req, res) => {
       notas
     } = req.body;
 
+    const esAdmin = req.usuario && req.usuario.rol === 'admin';
+    // Si es masoterapeuta, se asigna obligatoriamente a sí mismo
+    const idTerapeuta = (!esAdmin && req.usuario) ? req.usuario.id : (usuario_id || (req.usuario ? req.usuario.id : null));
+
     // 1. Validaciones básicas
-    if (!cliente_id || !usuario_id || !sala_id || !fecha || !hora_inicio || !hora_fin) {
+    if (!cliente_id || !idTerapeuta || !sala_id || !fecha || !hora_inicio || !hora_fin) {
       return res.status(400).json({
         ok: false,
         mensaje: 'Todos los campos obligatorios deben ser completados.'
@@ -268,7 +311,7 @@ const createReserva = async (req, res) => {
     // 4. Crear el registro de la cita en la base de datos
     const nuevaCita = await Cita.create({
       cliente_id,
-      usuario_id,
+      usuario_id: idTerapeuta,
       sala_id,
       fecha,
       hora_inicio,
@@ -321,6 +364,15 @@ const confirmarSala = async (req, res) => {
       });
     }
 
+    // Regla de autorización: El masajista dueño de la cita o el Administrador
+    const esAdmin = req.usuario && req.usuario.rol === 'admin';
+    if (!esAdmin && cita.usuario_id !== req.usuario.id) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: 'Acceso Denegado: Solo puedes confirmar tus propias reservas.'
+      });
+    }
+
     if (cita.estado !== 'pendiente_confirmacion') {
       return res.status(400).json({
         ok: false,
@@ -363,24 +415,26 @@ const confirmarSala = async (req, res) => {
 };
 
 /**
- * Libera o cancela un horario que ya está en estado 'confirmada'
- * REGLA ESTRICTA: Exclusivo para usuario con rol 'admin'
- * @route PATCH /api/v1/citas/:id/liberar
+ * Reprograma el horario, fecha y/o sala de una cita
+ * REGLA ESTRICTA:
+ * - Si la cita está 'confirmada': ÚNICAMENTE el Administrador puede cambiar el horario o sala.
+ * - Si la cita está 'pendiente_confirmacion': El terapeuta dueño o Administrador pueden cambiarla.
+ * @route PATCH /api/v1/citas/:id/reprogramar
  */
-const liberarCitaConfirmada = async (req, res) => {
+const reprogramarCita = async (req, res) => {
   try {
     const { id } = req.params;
-    const { motivo } = req.body;
+    const { fecha, hora_inicio, hora_fin, sala_id } = req.body;
+    const esAdmin = req.usuario && req.usuario.rol === 'admin';
+    const usuarioId = req.usuario ? req.usuario.id : null;
 
-    // 1. Validar permiso exclusivo de Administrador
-    if (!req.usuario || req.usuario.rol !== 'admin') {
-      return res.status(403).json({
+    if (!fecha || !hora_inicio || !hora_fin) {
+      return res.status(400).json({
         ok: false,
-        mensaje: 'Acceso Denegado: Únicamente el Administrador tiene autorización para liberar un horario confirmado.'
+        mensaje: 'La nueva fecha, hora de inicio y hora de fin son obligatorias.'
       });
     }
 
-    // 2. Buscar la cita
     const cita = await Cita.findByPk(id);
 
     if (!cita) {
@@ -390,22 +444,154 @@ const liberarCitaConfirmada = async (req, res) => {
       });
     }
 
-    // 3. Actualizar a cancelada y liberar la sala
+    // REGLA: Si la cita está confirmada, SOLO el admin puede cambiar horario
+    if (cita.estado === 'confirmada' && !esAdmin) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: 'Acceso Denegado: Una vez confirmada la cita, únicamente el Administrador puede cambiar el horario o sala.'
+      });
+    }
+
+    // Si está pendiente y el usuario no es admin ni dueño
+    if (cita.estado === 'pendiente_confirmacion' && !esAdmin && cita.usuario_id !== usuarioId) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: 'Acceso Denegado: Solo puedes modificar tus propias citas pendientes.'
+      });
+    }
+
+    if (['completada', 'cancelada', 'liberada_automatica'].includes(cita.estado)) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: `No se puede reprogramar una cita en estado '${cita.estado}'.`
+      });
+    }
+
+    const targetSalaId = sala_id ? parseInt(sala_id, 10) : cita.sala_id;
+
+    // Verificar colisión con otra cita activa
+    const colision = await Cita.findOne({
+      where: {
+        id: { [Op.ne]: cita.id },
+        sala_id: targetSalaId,
+        fecha,
+        hora_inicio,
+        estado: {
+          [Op.in]: ['pendiente_confirmacion', 'confirmada', 'ocupada']
+        }
+      }
+    });
+
+    if (colision) {
+      return res.status(409).json({
+        ok: false,
+        mensaje: 'La sala ya se encuentra ocupada o reservada en el nuevo horario seleccionado.'
+      });
+    }
+
+    cita.fecha = fecha;
+    cita.hora_inicio = hora_inicio;
+    cita.hora_fin = hora_fin;
+    cita.sala_id = targetSalaId;
+
+    // Si sigue en pendiente, recalcular deadline
+    if (cita.estado === 'pendiente_confirmacion') {
+      const ahora = new Date();
+      const fechaHoraCita = new Date(`${fecha}T${hora_inicio}:00`);
+      const diferenciaMinutos = (fechaHoraCita - ahora) / (1000 * 60);
+
+      if (diferenciaMinutos > 60) {
+        cita.deadline_confirmacion = new Date(fechaHoraCita.getTime() - 60 * 60 * 1000);
+      } else {
+        cita.deadline_confirmacion = new Date(ahora.getTime() + 20 * 60 * 1000);
+      }
+    }
+
+    await cita.save();
+
+    const citaActualizada = await Cita.findByPk(cita.id, {
+      include: [
+        { model: Cliente, as: 'cliente' },
+        { model: Usuario, as: 'masajista' },
+        { model: Sala, as: 'sala' }
+      ]
+    });
+
+    return res.status(200).json({
+      ok: true,
+      mensaje: 'Horario y sala de la cita actualizados exitosamente.',
+      cita: citaActualizada
+    });
+
+  } catch (error) {
+    console.error('❌ [CitasController.reprogramarCita] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error al reprogramar la cita.',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Cancela o libera una cita.
+ * REGLA ESTRICTA:
+ * - Si está 'confirmada': ÚNICAMENTE el Administrador puede cancelarla o liberarla.
+ * - Si está 'pendiente_confirmacion': El terapeuta dueño o Administrador pueden cancelarla.
+ * @route PATCH /api/v1/citas/:id/cancelar
+ */
+const cancelarCita = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { motivo } = req.body;
+    const esAdmin = req.usuario && req.usuario.rol === 'admin';
+    const usuarioId = req.usuario ? req.usuario.id : null;
+
+    const cita = await Cita.findByPk(id);
+
+    if (!cita) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: 'Cita no encontrada.'
+      });
+    }
+
+    if (cita.estado === 'confirmada') {
+      if (!esAdmin) {
+        return res.status(403).json({
+          ok: false,
+          mensaje: 'Acceso Denegado: Una vez confirmada la cita, únicamente el Administrador tiene autorización para cancelarla o liberarla.'
+        });
+      }
+    } else if (cita.estado === 'pendiente_confirmacion') {
+      if (!esAdmin && cita.usuario_id !== usuarioId) {
+        return res.status(403).json({
+          ok: false,
+          mensaje: 'Acceso Denegado: Solo puedes cancelar tus propias reservas pendientes.'
+        });
+      }
+    } else {
+      return res.status(400).json({
+        ok: false,
+        mensaje: `No se puede cancelar una cita en estado '${cita.estado}'.`
+      });
+    }
+
     cita.estado = 'cancelada';
-    cita.motivo_cancelacion = motivo || `Liberada manualmente por el Administrador (${req.usuario.nombre})`;
+    cita.motivo_cancelacion = motivo || `Cancelada por ${req.usuario.nombre} (${req.usuario.rol === 'admin' ? 'Administrador' : 'Masoterapeuta'})`;
     await cita.save();
 
     return res.status(200).json({
       ok: true,
-      mensaje: 'El horario confirmado ha sido liberado exitosamente por el Administrador.',
+      mensaje: 'La cita ha sido cancelada exitosamente y el espacio queda disponible.',
       cita
     });
 
   } catch (error) {
-    console.error('❌ [CitasController.liberarCitaConfirmada] Error:', error);
+    console.error('❌ [CitasController.cancelarCita] Error:', error);
     return res.status(500).json({
       ok: false,
-      mensaje: 'Error al liberar el horario confirmado.',
+      mensaje: 'Error al cancelar la cita.',
       error: error.message
     });
   }
@@ -480,6 +666,7 @@ const completarCita = async (req, res) => {
  */
 const getHistorial = async (req, res) => {
   try {
+    await procesarEstadosAutomaticos();
     const { fecha_desde, fecha_hasta, estado, sala_id, usuario_id } = req.query;
 
     const whereConditions = {};
@@ -539,7 +726,9 @@ module.exports = {
   getDisponibilidad,
   createReserva,
   confirmarSala,
-  liberarCitaConfirmada,
+  reprogramarCita,
+  cancelarCita,
+  liberarCitaConfirmada: cancelarCita,
   completarCita,
   getHistorial
 };

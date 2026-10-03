@@ -20,7 +20,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <div>
             <h1>Fichas y Expedientes de Clientes</h1>
-            <p style="color: #7F8C8D;">Datos de contacto, notas clínicas, preferencias y tratamientos históricos</p>
+            <p style="color: #7F8C8D;">Datos de contacto y consulta del historial de sesiones de spa</p>
           </div>
           <button class="btn btn-primary" onclick="abrirModal('modal-nuevo-cliente')">
             <span>➕</span>
@@ -31,7 +31,7 @@
         <!-- Barra de búsqueda -->
         <div class="card" style="margin-bottom: 1.5rem;">
           <div style="display: flex; gap: 1rem;">
-            <input type="text" id="busqueda-cliente" class="form-control" placeholder="Buscar por nombre, DNI o teléfono..." oninput="buscarClientes()">
+            <input type="text" id="busqueda-cliente" class="form-control" placeholder="Buscar por nombre, teléfono o correo..." oninput="buscarClientes()">
             <button class="btn btn-primary" onclick="buscarClientes()">🔍 Buscar</button>
           </div>
         </div>
@@ -43,16 +43,14 @@
               <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>DNI / Identificación</th>
-                <th>Teléfono</th>
-                <th>Email</th>
-                <th>Notas Clínicas / Preferencias</th>
+                <th>Teléfono (Obligatorio)</th>
+                <th>Correo Electrónico</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="clientes-body">
               <tr>
-                <td colspan="7" style="text-align: center; color: #7F8C8D; padding: 2rem;">Cargando clientes...</td>
+                <td colspan="5" style="text-align: center; color: #7F8C8D; padding: 2rem;">Cargando clientes...</td>
               </tr>
             </tbody>
           </table>
@@ -72,31 +70,21 @@
         <input type="hidden" id="edit-cliente-id">
         <div class="modal-body">
           <div class="form-group">
-            <label>Nombre y Apellidos</label>
+            <label>Nombre y Apellidos *</label>
             <input type="text" id="cliente-nombre" class="form-control" placeholder="ej. María López" required>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-              <label>DNI / Documento</label>
-              <input type="text" id="cliente-dni" class="form-control" placeholder="12345678Z">
-            </div>
-            <div class="form-group">
-              <label>Teléfono</label>
-              <input type="tel" id="cliente-telefono" class="form-control" placeholder="+34 600 000 000" required>
-            </div>
+          <div class="form-group">
+            <label>Teléfono * (Obligatorio)</label>
+            <input type="tel" id="cliente-telefono" class="form-control" placeholder="+34 600 000 000" required>
           </div>
           <div class="form-group">
-            <label>Email</label>
+            <label>Correo Electrónico</label>
             <input type="email" id="cliente-email" class="form-control" placeholder="cliente@email.com">
-          </div>
-          <div class="form-group">
-            <label>Notas Clínicas / Alergias / Preferencias</label>
-            <textarea id="cliente-notas" class="form-control" rows="3" placeholder="Alergias a esencias, zonas con dolor lumbar, presión preferida..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-cliente')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Ficha</button>
+          <button type="submit" class="btn btn-primary">Guardar Cliente</button>
         </div>
       </form>
     </div>
@@ -137,7 +125,7 @@
         const tbody = document.getElementById('clientes-body');
         
         if (clientes.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #7F8C8D;">No se encontraron clientes.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #7F8C8D;">No se encontraron clientes.</td></tr>`;
           return;
         }
 
@@ -145,13 +133,11 @@
           <tr>
             <td><strong>#${c.id}</strong></td>
             <td><strong>${c.nombre}</strong></td>
-            <td>${c.dni || 'N/A'}</td>
-            <td>${c.telefono}</td>
-            <td>${c.email || 'N/A'}</td>
-            <td style="max-width: 250px; font-size: 0.85rem; color: #566573;">${c.notas_clinicas || 'Sin notas registradas.'}</td>
+            <td>📞 ${c.telefono}</td>
+            <td>${c.email ? `✉️ ${c.email}` : '<span style="color: #BDC3C7;">No registrado</span>'}</td>
             <td>
               <button class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" onclick="verExpediente(${c.id})">
-                👁️ Ver Ficha
+                👁️ Ver Historial
               </button>
             </td>
           </tr>
@@ -162,10 +148,10 @@
     async function verExpediente(clienteId) {
       try {
         const cliente = await clientesService.getClienteById(clienteId);
-        document.getElementById('detalle-nombre').textContent = `Expediente: ${cliente.nombre}`;
+        document.getElementById('detalle-nombre').textContent = `Ficha: ${cliente.nombre}`;
         document.getElementById('detalle-info').innerHTML = `
-          <p>📞 <strong>Teléfono:</strong> ${cliente.telefono} | 🆔 <strong>DNI:</strong> ${cliente.dni || 'N/A'}</p>
-          <p style="margin-top: 0.4rem;">🩺 <strong>Notas Clínicas:</strong> ${cliente.notas_clinicas || 'Ninguna'}</p>
+          <p>📞 <strong>Teléfono:</strong> ${cliente.telefono}</p>
+          <p style="margin-top: 0.3rem;">✉️ <strong>Correo Electrónico:</strong> ${cliente.email || 'No registrado'}</p>
         `;
 
         const contCitas = document.getElementById('detalle-citas');
@@ -198,10 +184,8 @@
       try {
         const payload = {
           nombre: document.getElementById('cliente-nombre').value,
-          dni: document.getElementById('cliente-dni').value,
           telefono: document.getElementById('cliente-telefono').value,
-          email: document.getElementById('cliente-email').value,
-          notas_clinicas: document.getElementById('cliente-notas').value
+          email: document.getElementById('cliente-email').value || null
         };
 
         const res = await clientesService.createCliente(payload);

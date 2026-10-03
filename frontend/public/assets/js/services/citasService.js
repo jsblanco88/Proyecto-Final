@@ -62,6 +62,28 @@ const citasService = {
   },
 
   /**
+   * Reprograma fecha, horario y sala de una cita
+   * @param {number|string} citaId 
+   * @param {Object} datosReprogramacion { fecha, hora_inicio, hora_fin, sala_id }
+   * @returns {Promise<Object>}
+   */
+  async reprogramarCita(citaId, datosReprogramacion) {
+    const res = await apiClient.patch(`/citas/${citaId}/reprogramar`, datosReprogramacion);
+    return res;
+  },
+
+  /**
+   * Cancela una cita
+   * @param {number|string} citaId 
+   * @param {string} motivo 
+   * @returns {Promise<Object>}
+   */
+  async cancelarCita(citaId, motivo) {
+    const res = await apiClient.patch(`/citas/${citaId}/cancelar`, { motivo });
+    return res;
+  },
+
+  /**
    * Marca una cita como completada y registra insumos consumidos
    * @param {number|string} citaId 
    * @param {Array} insumosUtilizados 

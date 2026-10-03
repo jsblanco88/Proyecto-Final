@@ -65,8 +65,51 @@ const getStats = async (req, res) => {
     const citasPorMesData = [12, 19, 15, 25, 32, 28, 35, 42, 38, 45, 0, 0];
     const ingresosPorMesData = [600, 950, 750, 1250, 1600, 1400, 1750, 2100, 1900, 2250, 0, 0];
 
+    // 6. KPIs Detallados por Masajista (Exclusivo / Destacado para Administrador)
+    let masajistasKpis = [];
+    if (esAdmin) {
+      const masajistas = await Usuario.findAll({
+        where: { rol: 'masoterapeuta', activo: true },
+        attributes: ['id', 'nombre', 'email', 'especialidad', 'activo'],
+        order: [['nombre', 'ASC']]
+      });
+
+      for (const m of masajistas) {
+        const mTotalCitas = await Cita.count({ where: { usuario_id: m.id } });
+        const mCompletadas = await Cita.count({ where: { usuario_id: m.id, estado: 'completada' } });
+        const mConfirmadas = await Cita.count({ where: { usuario_id: m.id, estado: 'confirmada' } });
+        const mPendientes = await Cita.count({ where: { usuario_id: m.id, estado: 'pendiente_confirmacion' } });
+        const mCanceladas = await Cita.count({
+          where: {
+            usuario_id: m.id,
+            estado: { [Op.in]: ['cancelada', 'liberada_automatica'] }
+          }
+        });
+        const mIngresosRes = await Cita.sum('monto_cobrado', {
+          where: { usuario_id: m.id, estado: 'completada' }
+        });
+        const mIngresos = mIngresosRes || 0;
+        const tasaEfectividad = mTotalCitas > 0 ? Math.round((mCompletadas / mTotalCitas) * 100) : 0;
+
+        masajistasKpis.push({
+          id: m.id,
+          nombre: m.nombre,
+          email: m.email,
+          especialidad: m.especialidad || 'Masoterapeuta General',
+          totalCitas: mTotalCitas,
+          citasCompletadas: mCompletadas,
+          citasConfirmadas: mConfirmadas,
+          citasPendientes: mPendientes,
+          citasCanceladas: mCanceladas,
+          ingresosGenerados: mIngresos,
+          tasaEfectividad
+        });
+      }
+    }
+
     return res.status(200).json({
       ok: true,
+      esAdmin,
       kpis: {
         totalCitas,
         citasCompletadas,
@@ -77,6 +120,7 @@ const getStats = async (req, res) => {
         totalProductos
       },
       ocupacionSalas: ocupacionPorSala,
+      masajistasKpis,
       graficos: {
         meses,
         citasPorMes: citasPorMesData,

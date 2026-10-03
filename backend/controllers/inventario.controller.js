@@ -14,24 +14,132 @@
 const { Producto, Proveedor, CompraInsumo, ConsumoInsumo, sequelize } = require('../models');
 
 /**
- * Obtiene el catálogo completo de productos e insumos con stock y alertas
+ * Obtiene el catálogo completo de productos e insumos con stock y estado agotado
  * @route GET /api/v1/inventario/productos
  */
 const getProductos = async (req, res) => {
   try {
     const productos = await Producto.findAll({
-      order: [['nombre', 'ASC']]
+      order: [
+        ['agotado', 'DESC'],
+        ['nombre', 'ASC']
+      ]
     });
+
+    const listaCompras = productos.filter(p => p.agotado);
 
     return res.status(200).json({
       ok: true,
-      productos
+      total: productos.length,
+      totalAgotados: listaCompras.length,
+      productos,
+      listaCompras
     });
   } catch (error) {
     console.error('❌ [InventarioController.getProductos] Error:', error);
     return res.status(500).json({
       ok: false,
       mensaje: 'Error al obtener la lista de insumos.',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Alterna el estado de un insumo (Disponible <-> Agotado) para armar la lista de compra
+ * @route PATCH /api/v1/inventario/productos/:id/toggle-agotado
+ */
+const toggleAgotado = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const producto = await Producto.findByPk(id);
+
+    if (!producto) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: 'Insumo no encontrado.'
+      });
+    }
+
+    producto.agotado = !producto.agotado;
+    await producto.save();
+
+    return res.status(200).json({
+      ok: true,
+      mensaje: producto.agotado 
+        ? `Insumo "${producto.nombre}" marcado como AGOTADO y agregado a la lista de compras.`
+        : `Insumo "${producto.nombre}" marcado como DISPONIBLE (retirado de la lista de compras).`,
+      producto
+    });
+  } catch (error) {
+    console.error('❌ [InventarioController.toggleAgotado] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error al actualizar el estado del insumo.',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Marca un insumo como repuesto / en stock (agotado = false)
+ * @route PATCH /api/v1/inventario/productos/:id/reponer
+ */
+const reponerInsumo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { cantidad_agregada } = req.body;
+    const producto = await Producto.findByPk(id);
+
+    if (!producto) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: 'Insumo no encontrado.'
+      });
+    }
+
+    producto.agotado = false;
+    if (cantidad_agregada && parseInt(cantidad_agregada, 10) > 0) {
+      producto.stock_actual += parseInt(cantidad_agregada, 10);
+    }
+    await producto.save();
+
+    return res.status(200).json({
+      ok: true,
+      mensaje: `Insumo "${producto.nombre}" repuesto exitosamente y marcado como disponible.`,
+      producto
+    });
+  } catch (error) {
+    console.error('❌ [InventarioController.reponerInsumo] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error al reponer el insumo.',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtiene la lista exclusiva de insumos agotados para compras y reposición
+ * @route GET /api/v1/inventario/lista-compras
+ */
+const getListaCompras = async (req, res) => {
+  try {
+    const productosAgotados = await Producto.findAll({
+      where: { agotado: true },
+      order: [['categoria', 'ASC'], ['nombre', 'ASC']]
+    });
+
+    return res.status(200).json({
+      ok: true,
+      total: productosAgotados.length,
+      listaCompras: productosAgotados
+    });
+  } catch (error) {
+    console.error('❌ [InventarioController.getListaCompras] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error al obtener la lista de compras.',
       error: error.message
     });
   }
@@ -200,6 +308,9 @@ const getProveedores = async (req, res) => {
 module.exports = {
   getProductos,
   createProducto,
+  toggleAgotado,
+  reponerInsumo,
+  getListaCompras,
   registrarCompra,
   getMetricasConsumo,
   getProveedores

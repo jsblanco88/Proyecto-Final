@@ -58,17 +58,18 @@ flowchart TD
   - `auth.middleware.js`: Verificación de Token JWT.
   - `role.middleware.js`: Guardián de permisos para Administrador y Masoterapeutas.
 - [x] **3.2. Controlador de Autenticación (`auth.controller.js`)**:
-  - Login con hash de contraseñas (`bcryptjs`), generación de token y datos de perfil.
+  - Login con hash de contraseñas (`bcryptjs`), generación de token, perfil y **alta de nuevos masajistas exclusiva para Administrador** (`POST /api/v1/auth/masajistas`).
 - [x] **3.3. Controlador de Citas y Matriz de Salas (`citas.controller.js`)**:
-  - `getDisponibilidad`: Consulta de los 12 bloques (8:00 AM a 8:00 PM) para las 4 salas con cálculo de estados al vuelo.
-  - `createReserva`: Creación de cita y cálculo automático del `deadline_confirmacion` (1h antes o +20 min para reservas express).
-  - `confirmarSala`: Confirmación exclusiva del masajista dentro de plazo.
-  - `liberarCitaConfirmada`: Endpoint protegido con **acceso exclusivo para rol `admin`** para liberar o cancelar citas confirmadas.
+  - `getDisponibilidad`: Matriz de 12 bloques x 4 salas con cálculo de estados y **protección de nombres de clientes individuales para masajistas**.
+  - `createReserva`: Creación de cita vinculada a clientes individuales y autoasignación de masajista.
+  - `confirmarSala`: Confirmación de sala por el masajista dueño o Administrador dentro del plazo (1h / 20min).
+  - `reprogramarCita`: Cambio de fecha/horario/sala (**Exclusivo Administrador si la cita está confirmada**; masajista dueño si está pendiente).
+  - `cancelarCita` / `liberarCitaConfirmada`: Cancelación de cita (**Exclusivo Administrador si la cita está confirmada**; masajista dueño si está pendiente).
   - `completarCita`: Cierre de sesión y deducción automática de insumos.
 - [x] **3.4. Controlador de Inventario (`inventario.controller.js`)**:
   - CRUD de productos, compras a proveedores y métricas de consumo (Exclusivo Admin).
 - [x] **3.5. Controlador de Clientes y Dashboard (`clientes.controller.js` y `dashboard.controller.js`)**:
-  - Gestión de fichas clínicas y agregación de métricas de ingresos, citas y ocupación.
+  - Fichas individuales por terapeuta con registro de `creado_por` y visualización global para el Administrador.
 
 ---
 
@@ -92,25 +93,29 @@ flowchart TD
   - Formulario de autenticación con redirección según rol y botones rápidos de prueba.
 - [x] **5.3. Vista de Reservas - Matriz de 4 Salas y 12 Horarios (`frontend/views/reservas.html`)**:
   - Renderizado dinámico de la cuadrícula de 4 salas x 12 bloques (8:00 AM - 8:00 PM).
-  - Modal de agendamiento rápido.
-  - Botón de confirmación para masajistas con validación de plazo (1h / 20 min).
-  - Modal de liberación exclusiva para el Administrador sobre citas confirmadas.
+  - Modal de agendamiento rápido con selector de cliente individual y botón `➕ Nuevo Cliente`.
+  - Botón de confirmación para masajistas (`✓ Confirmar Sala`).
+  - Botones y modal de cambio de horario (`⏰ Cambiar Horario`) y cancelación (`🗑️ Cancelar/Liberar`) exclusivos del Administrador para citas confirmadas.
+  - Botón y modal de registro de nuevos masajistas exclusivo para el Administrador (`💆 Nuevo Masajista (Admin)`).
+  - Anonimización visual de nombres de clientes de otros terapeutas (`👤 [Cliente Reservado]`).
 - [x] **5.4. Vista de Historial de Citas (`frontend/views/historial.html`)**:
   - Tabla con filtros por fecha, sala y estado (*Pendiente*, *Confirmada*, *Completada*, *Cancelada*).
 - [x] **5.5. Vista de Inventario (`frontend/views/inventario.html`)**:
   - Tabla de stock, registro modal de compras a proveedores y visualizador de consumo con Chart.js.
 - [x] **5.6. Vista de Ficha de Clientes (`frontend/views/ficha-cliente.html`)**:
-  - Expedientes centralizados, notas clínicas/terapéuticas y citas históricas.
+  - Expedientes individuales para masajistas y expedientes globales para el Administrador.
 - [x] **5.7. Vista de Dashboard (`frontend/views/dashboard.html`)**:
   - Tarjetas de KPIs y gráficos con Chart.js (citas/mes, ingresos, consumo y ocupación de salas).
 
 ---
 
 ### 🧪 FASE 6: Pruebas Integradas, Auditoría de Código y Verificación
-- [ ] **6.1. Validación de Reglas de Negocio Temporales**:
-  - Verificar que una reserva realizada con >1h se libere si no se confirma a 1 hora del inicio.
-  - Verificar que una reserva express (<=1h) se libere a los 20 minutos sin confirmación.
-  - Verificar que un masajista NO pueda liberar una cita confirmada y que el Administrador SÍ pueda.
+- [x] **6.1. Validación de Reglas de Negocio Temporales y Permisos**:
+  - Verificación de confirmación de salas por masajistas individuales.
+  - Verificación de bloqueo 403 para masajistas en modificación/cancelación de citas confirmadas.
+  - Verificación de permisos exclusivos del Administrador para reprogramar y cancelar citas confirmadas.
+  - Verificación de privacidad de nombres de clientes (anonimización para terceros).
+  - Verificación de bloqueo 403 para creación de masajistas por usuarios no administradores y alta exitosa por Admin.
 - [x] **6.2. Auditoría de Código 100% Comentado**:
   - Todos los archivos contienen documentación JSDoc y comentarios explicativos.
 - [x] **6.3. Verificación de Manuales y Documentación**:

@@ -25,10 +25,16 @@
             <h1>Controlador de Citas y Matriz de Salas</h1>
             <p style="color: #7F8C8D;">Visualización y agendamiento en tiempo real para 4 salas y 12 bloques horarios</p>
           </div>
-          <button id="btn-nueva-reserva-top" class="btn btn-primary">
-            <span>➕</span>
-            <span>Nueva Reserva</span>
-          </button>
+          <div style="display: flex; gap: 0.6rem;">
+            <button id="btn-nuevo-masajista-top" class="btn btn-secondary" style="display: none;" onclick="abrirModalNuevoMasajista()">
+              <span>💆</span>
+              <span>Nuevo Masajista (Admin)</span>
+            </button>
+            <button id="btn-nueva-reserva-top" class="btn btn-primary">
+              <span>➕</span>
+              <span>Nueva Reserva</span>
+            </button>
+          </div>
         </div>
 
         <!-- Leyenda del Semáforo y Reglas -->
@@ -103,12 +109,23 @@
           </div>
 
           <div class="form-group">
-            <label>Cliente</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+              <label style="margin: 0;">Cliente Individual</label>
+              <button type="button" class="btn btn-outline" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;" onclick="abrirModalClienteRapido()">
+                ➕ Nuevo Cliente
+              </button>
+            </div>
             <select id="reserva-cliente" class="form-control" required></select>
+            <small style="color: #7F8C8D; font-size: 0.75rem;">Cada masajista gestiona y visualiza únicamente sus clientes individuales.</small>
           </div>
 
           <div class="form-group">
-            <label>Masajista / Terapeuta</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+              <label style="margin: 0;">Masajista / Terapeuta</label>
+              <button type="button" id="btn-nuevo-masajista-modal" class="btn btn-outline" style="padding: 0.15rem 0.5rem; font-size: 0.75rem; display: none;" onclick="abrirModalNuevoMasajista()">
+                ➕ Nuevo Masajista (Admin)
+              </button>
+            </div>
             <select id="reserva-masajista" class="form-control" required></select>
           </div>
 
@@ -125,7 +142,7 @@
 
           <div class="form-group">
             <label>Notas Clínicas / Preferencias</label>
-            <textarea id="reserva-notas" class="form-control" rows="2" placeholder="Observaciones particulares..."></textarea>
+            <textarea id="reserva-notas" class="form-control" rows="2" placeholder="Observaciones particulares del cliente..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -136,27 +153,134 @@
     </div>
   </div>
 
-  <!-- MODAL: LIBERACIÓN EXCLUSIVA POR ADMINISTRADOR -->
-  <div class="modal-overlay" id="modal-liberar-admin">
+  <!-- MODAL: REPROGRAMAR / CAMBIAR HORARIO O SALA -->
+  <div class="modal-overlay" id="modal-reprogramar">
     <div class="modal-box">
-      <div class="modal-header" style="background-color: #C0392B;">
-        <h3>Liberar Horario Confirmado (Admin)</h3>
-        <button class="modal-close" onclick="cerrarModal('modal-liberar-admin')">&times;</button>
+      <div class="modal-header" style="background-color: #2980B9;">
+        <h3 id="modal-reprogramar-titulo">Reprogramar Horario de Cita</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-reprogramar')">&times;</button>
       </div>
-      <form id="form-liberar-admin">
-        <input type="hidden" id="liberar-cita-id">
+      <form id="form-reprogramar">
+        <input type="hidden" id="reprogramar-cita-id">
         <div class="modal-body">
-          <p style="color: #78281F; font-weight: 600; margin-bottom: 1rem;">
-            ⚠️ Esta cita ya está confirmada. Según las reglas del spa, solo el Administrador puede cancelar o liberar este espacio.
+          <p id="reprogramar-aviso" style="font-size: 0.85rem; color: #1A5276; margin-bottom: 1rem; background: #EBF5FB; padding: 0.6rem; border-radius: 4px;">
+            ℹ️ Seleccione la nueva fecha, bloque horario y sala disponible.
           </p>
+
           <div class="form-group">
-            <label>Motivo de la Liberación / Cancelación</label>
-            <textarea id="liberar-motivo" class="form-control" rows="3" placeholder="Indique la justificación administrativa..." required></textarea>
+            <label>Sala Temática</label>
+            <select id="reprogramar-sala" class="form-control" required></select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Nueva Fecha</label>
+              <input type="date" id="reprogramar-fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Nuevo Bloque Horario</label>
+              <select id="reprogramar-bloque" class="form-control" required></select>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-liberar-admin')">Volver</button>
-          <button type="submit" class="btn btn-danger">Confirmar Liberación</button>
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-reprogramar')">Volver</button>
+          <button type="submit" class="btn btn-primary">Guardar Nuevo Horario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CANCELAR / LIBERAR CITA -->
+  <div class="modal-overlay" id="modal-cancelar">
+    <div class="modal-box">
+      <div class="modal-header" style="background-color: #C0392B;">
+        <h3 id="modal-cancelar-titulo">Cancelar / Liberar Cita</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-cancelar')">&times;</button>
+      </div>
+      <form id="form-cancelar">
+        <input type="hidden" id="cancelar-cita-id">
+        <div class="modal-body">
+          <p id="cancelar-aviso" style="color: #78281F; font-weight: 600; margin-bottom: 1rem;">
+            ⚠️ ¿Está seguro de cancelar esta reserva? El espacio quedará disponible de inmediato en la matriz.
+          </p>
+          <div class="form-group">
+            <label>Motivo de la Cancelación / Liberación</label>
+            <textarea id="cancelar-motivo" class="form-control" rows="3" placeholder="Indique la justificación..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-cancelar')">Volver</button>
+          <button type="submit" class="btn btn-danger">Confirmar Cancelación</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR CLIENTE RÁPIDO -->
+  <div class="modal-overlay" id="modal-cliente-rapido">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrar Nuevo Cliente Individual</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-cliente-rapido')">&times;</button>
+      </div>
+      <form id="form-cliente-rapido">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nombre y Apellidos *</label>
+            <input type="text" id="rapido-nombre" class="form-control" placeholder="ej. Lucía Fernández" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono * (Obligatorio)</label>
+            <input type="tel" id="rapido-telefono" class="form-control" placeholder="+34 600 000 000" required>
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="rapido-email" class="form-control" placeholder="cliente@email.com">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-cliente-rapido')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Registrar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO MASAJISTA (EXCLUSIVO ADMIN) -->
+  <div class="modal-overlay" id="modal-nuevo-masajista">
+    <div class="modal-box">
+      <div class="modal-header" style="background-color: #16A085;">
+        <h3>Registrar Nuevo Masajista (Admin)</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-nuevo-masajista')">&times;</button>
+      </div>
+      <form id="form-nuevo-masajista">
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: #0E6655; margin-bottom: 1rem; background: #E8F8F5; padding: 0.6rem; border-radius: 4px;">
+            🔒 Solo el Administrador tiene autorización para crear y dar de alta a nuevos masoterapeutas en la plataforma.
+          </p>
+          <div class="form-group">
+            <label>Nombre Completo *</label>
+            <input type="text" id="masajista-nombre" class="form-control" placeholder="ej. David Masoterapeuta" required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Correo Electrónico (Login) *</label>
+              <input type="email" id="masajista-email" class="form-control" placeholder="david@spa.com" required>
+            </div>
+            <div class="form-group">
+              <label>Contraseña Inicial *</label>
+              <input type="password" id="masajista-password" class="form-control" placeholder="Mínimo 6 caracteres" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Especialidad / Sala Preferente</label>
+            <input type="text" id="masajista-especialidad" class="form-control" placeholder="ej. Piedras Volcánicas y Bambuterapia">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-masajista')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="background-color: #16A085;">Registrar Masajista</button>
         </div>
       </form>
     </div>
@@ -175,6 +299,7 @@
     let salasCache = [];
     let clientesCache = [];
     let masajistasCache = [];
+    let bloquesCache = [];
     let fechaActiva = new Date().toISOString().split('T')[0];
 
     function cerrarModal(id) {
@@ -187,27 +312,64 @@
 
     async function cargarDatosIniciales() {
       try {
-        const [salas, clientes, masajistas] = await Promise.all([
+        const [salas, clientesRes, masajistas] = await Promise.all([
           citasService.getSalas(),
           clientesService.getClientes(),
           authService.getMasajistas()
         ]);
         salasCache = salas;
-        clientesCache = clientes;
+        clientesCache = clientesRes;
         masajistasCache = masajistas;
 
-        // Poblar selects del modal de reserva
-        const selSala = document.getElementById('reserva-sala');
-        selSala.innerHTML = salas.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+        const esAdmin = authService.esAdmin();
+        const usuarioActual = authService.getUsuarioActual();
 
-        const selCliente = document.getElementById('reserva-cliente');
-        selCliente.innerHTML = clientes.map(c => `<option value="${c.id}">${c.nombre} (${c.telefono})</option>`).join('');
+        // Poblar selects de salas
+        const optionsSalas = salas.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+        document.getElementById('reserva-sala').innerHTML = optionsSalas;
+        document.getElementById('reprogramar-sala').innerHTML = optionsSalas;
 
+        // Poblar select de clientes (restringido a individuales para masajistas por backend)
+        actualizarSelectClientes();
+
+        // Poblar select de masajistas
         const selMasajista = document.getElementById('reserva-masajista');
-        selMasajista.innerHTML = masajistas.map(m => `<option value="${m.id}">${m.nombre} - ${m.especialidad || m.rol}</option>`).join('');
+        if (esAdmin) {
+          const btnTop = document.getElementById('btn-nuevo-masajista-top');
+          const btnModal = document.getElementById('btn-nuevo-masajista-modal');
+          if (btnTop) btnTop.style.display = 'inline-flex';
+          if (btnModal) btnModal.style.display = 'inline-block';
+          actualizarSelectMasajistas();
+          selMasajista.disabled = false;
+        } else {
+          selMasajista.innerHTML = `<option value="${usuarioActual.id}" selected>${usuarioActual.nombre} (Mi perfil)</option>`;
+          selMasajista.disabled = true;
+        }
 
       } catch (e) {
         console.error('Error cargando catálogos:', e);
+      }
+    }
+
+    function actualizarSelectMasajistas(seleccionadoId = null) {
+      const selMasajista = document.getElementById('reserva-masajista');
+      selMasajista.innerHTML = masajistasCache.map(m => `
+        <option value="${m.id}" ${seleccionadoId === m.id ? 'selected' : ''}>
+          ${m.nombre} - ${m.especialidad || m.rol}
+        </option>
+      `).join('');
+    }
+
+    function actualizarSelectClientes(clienteSeleccionadoId = null) {
+      const selCliente = document.getElementById('reserva-cliente');
+      if (clientesCache.length === 0) {
+        selCliente.innerHTML = `<option value="">No tienes clientes registrados aún. ¡Crea uno!</option>`;
+      } else {
+        selCliente.innerHTML = clientesCache.map(c => `
+          <option value="${c.id}" ${clienteSeleccionadoId === c.id ? 'selected' : ''}>
+            ${c.nombre} (${c.telefono})
+          </option>
+        `).join('');
       }
     }
 
@@ -217,13 +379,15 @@
         const res = await citasService.getDisponibilidad(fecha);
         if (!res.ok) return;
 
+        bloquesCache = res.bloques || [];
         const tbody = document.getElementById('matriz-body');
         const esAdmin = authService.esAdmin();
         const usuario = authService.getUsuarioActual();
 
-        // Poblar select de bloques horarios en modal
-        const selBloque = document.getElementById('reserva-bloque');
-        selBloque.innerHTML = res.bloques.map(b => `<option value="${b.hora_inicio}|${b.hora_fin}">${b.etiqueta}</option>`).join('');
+        // Poblar select de bloques horarios en modal de reserva y reprogramación
+        const optionsBloques = res.bloques.map(b => `<option value="${b.hora_inicio}|${b.hora_fin}">${b.etiqueta}</option>`).join('');
+        document.getElementById('reserva-bloque').innerHTML = optionsBloques;
+        document.getElementById('reprogramar-bloque').innerHTML = optionsBloques;
 
         let html = '';
 
@@ -246,16 +410,24 @@
               `;
             } else if (slot.colorEstado === 'amarillo') {
               // 🟡 RESERVADO (PENDIENTE CONFIRMACIÓN)
-              const esMiCita = usuario && (usuario.id === slot.masajistaId || esAdmin);
+              const esMiCita = slot.esMiCita || (usuario && usuario.id === slot.masajistaId) || esAdmin;
               html += `
                 <td class="celda-slot celda-reservado">
                   <div class="slot-cliente">👤 ${slot.cliente}</div>
                   <div class="slot-terapeuta">💆 ${slot.masajista}</div>
-                  <div class="slot-acciones">
+                  <div class="slot-acciones" style="display: flex; flex-direction: column; gap: 4px; margin-top: 5px;">
                     ${esMiCita ? `
                       <button class="btn-mini-confirmar" onclick="confirmarSala(${slot.citaId})">
                         ✓ Confirmar Sala
                       </button>
+                      <div style="display: flex; gap: 4px;">
+                        <button class="btn-mini-reprogramar" style="flex: 1;" onclick="prepararReprogramar(${slot.citaId}, ${sala.id}, '${fechaActiva}', '${fila.hora_inicio}', '${fila.hora_fin}', 'pendiente')">
+                          ⏰ Cambiar
+                        </button>
+                        <button class="btn-mini-cancelar" style="flex: 1;" onclick="prepararCancelar(${slot.citaId}, 'pendiente')">
+                          ✕ Cancelar
+                        </button>
+                      </div>
                     ` : '<span class="badge badge-amarillo">Pendiente</span>'}
                   </div>
                 </td>
@@ -266,13 +438,22 @@
                 <td class="celda-slot celda-confirmado">
                   <div class="slot-cliente">👤 ${slot.cliente}</div>
                   <div class="slot-terapeuta">💆 ${slot.masajista}</div>
-                  <div class="slot-acciones">
+                  <div class="slot-acciones" style="display: flex; flex-direction: column; gap: 4px; margin-top: 5px;">
                     <span class="badge badge-azul">Confirmado</span>
                     ${esAdmin ? `
-                      <button class="btn-mini-liberar" onclick="prepararLiberacionAdmin(${slot.citaId})">
-                        Liberar (Admin)
-                      </button>
-                    ` : ''}
+                      <div style="display: flex; gap: 4px;">
+                        <button class="btn-mini-reprogramar" style="flex: 1;" onclick="prepararReprogramar(${slot.citaId}, ${sala.id}, '${fechaActiva}', '${fila.hora_inicio}', '${fila.hora_fin}', 'confirmada')">
+                          ⏰ Cambiar Horario
+                        </button>
+                        <button class="btn-mini-liberar" style="flex: 1;" onclick="prepararCancelar(${slot.citaId}, 'confirmada')">
+                          🗑️ Cancelar (Admin)
+                        </button>
+                      </div>
+                    ` : (slot.esMiCita ? `
+                      <span style="font-size: 0.72rem; color: #7F8C8D; display: block; margin-top: 2px;">
+                        🔒 Confirmada (Cambios por Admin)
+                      </span>
+                    ` : '')}
                   </div>
                 </td>
               `;
@@ -307,7 +488,7 @@
 
     async function confirmarSala(citaId) {
       try {
-        if (!confirm('¿Desea confirmar esta sala para la cita?')) return;
+        if (!confirm('¿Desea confirmar esta sala para su cliente?')) return;
         const res = await citasService.confirmarSala(citaId);
         if (res.ok) {
           alert('¡Sala confirmada exitosamente!');
@@ -318,24 +499,113 @@
       }
     }
 
-    function prepararLiberacionAdmin(citaId) {
-      document.getElementById('liberar-cita-id').value = citaId;
-      document.getElementById('liberar-motivo').value = '';
-      abrirModal('modal-liberar-admin');
+    function prepararReprogramar(citaId, salaId, fecha, horaInicio, horaFin, tipoEstado) {
+      const esAdmin = authService.esAdmin();
+      if (tipoEstado === 'confirmada' && !esAdmin) {
+        alert('Una vez confirmada la cita, únicamente el Administrador puede cambiar el horario.');
+        return;
+      }
+      document.getElementById('reprogramar-cita-id').value = citaId;
+      document.getElementById('reprogramar-sala').value = salaId;
+      document.getElementById('reprogramar-fecha').value = fecha || fechaActiva;
+      document.getElementById('reprogramar-bloque').value = `${horaInicio}|${horaFin}`;
+      abrirModal('modal-reprogramar');
     }
+
+    function prepararCancelar(citaId, tipoEstado) {
+      const esAdmin = authService.esAdmin();
+      if (tipoEstado === 'confirmada' && !esAdmin) {
+        alert('Una vez confirmada la cita, únicamente el Administrador puede cancelar o liberar la sala.');
+        return;
+      }
+      document.getElementById('cancelar-cita-id').value = citaId;
+      document.getElementById('cancelar-motivo').value = '';
+      
+      const titulo = document.getElementById('modal-cancelar-titulo');
+      const aviso = document.getElementById('cancelar-aviso');
+      if (tipoEstado === 'confirmada') {
+        titulo.textContent = 'Liberar Cita Confirmada (Exclusivo Administrador)';
+        aviso.textContent = '⚠️ Esta cita está confirmada. Como Administrador, al liberarla se cancelará y quedará el bloque libre.';
+      } else {
+        titulo.textContent = 'Cancelar Reserva Pendiente';
+        aviso.textContent = '⚠️ ¿Desea cancelar esta reserva pendiente de confirmación?';
+      }
+      abrirModal('modal-cancelar');
+    }
+
+    function abrirModalNuevoMasajista() {
+      document.getElementById('masajista-nombre').value = '';
+      document.getElementById('masajista-email').value = '';
+      document.getElementById('masajista-password').value = '';
+      document.getElementById('masajista-especialidad').value = '';
+      abrirModal('modal-nuevo-masajista');
+    }
+
+    // Envío de formulario de nuevo masajista (Exclusivo Administrador)
+    document.getElementById('form-nuevo-masajista').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          nombre: document.getElementById('masajista-nombre').value,
+          email: document.getElementById('masajista-email').value,
+          password: document.getElementById('masajista-password').value,
+          especialidad: document.getElementById('masajista-especialidad').value || null
+        };
+        const res = await authService.createMasajista(payload);
+        if (res.ok) {
+          alert('¡Masajista registrado exitosamente por el Administrador!');
+          masajistasCache = await authService.getMasajistas();
+          actualizarSelectMasajistas(res.masajista.id);
+          cerrarModal('modal-nuevo-masajista');
+        }
+      } catch (err) {
+        alert(err.mensaje || 'Error al registrar masajista.');
+      }
+    });
+
+    function abrirModalClienteRapido() {
+      document.getElementById('rapido-nombre').value = '';
+      document.getElementById('rapido-telefono').value = '';
+      document.getElementById('rapido-email').value = '';
+      abrirModal('modal-cliente-rapido');
+    }
+
+    // Envío de formulario de nuevo cliente rápido
+    document.getElementById('form-cliente-rapido').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          nombre: document.getElementById('rapido-nombre').value,
+          telefono: document.getElementById('rapido-telefono').value,
+          email: document.getElementById('rapido-email').value || null
+        };
+        const res = await clientesService.createCliente(payload);
+        if (res.ok) {
+          alert('¡Cliente registrado exitosamente!');
+          clientesCache = await clientesService.getClientes();
+          actualizarSelectClientes(res.cliente.id);
+          cerrarModal('modal-cliente-rapido');
+        }
+      } catch (err) {
+        alert(err.mensaje || 'Error al registrar cliente.');
+      }
+    });
 
     // Envío de formulario de nueva reserva
     document.getElementById('form-nueva-reserva').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
         const [hora_inicio, hora_fin] = document.getElementById('reserva-bloque').value.split('|');
+        const usuarioActual = authService.getUsuarioActual();
+        const esAdmin = authService.esAdmin();
+
         const payload = {
           sala_id: document.getElementById('reserva-sala').value,
           fecha: document.getElementById('reserva-fecha').value,
           hora_inicio,
           hora_fin,
           cliente_id: document.getElementById('reserva-cliente').value,
-          usuario_id: document.getElementById('reserva-masajista').value,
+          usuario_id: esAdmin ? document.getElementById('reserva-masajista').value : usuarioActual.id,
           servicio_solicitado: document.getElementById('reserva-servicio').value,
           monto_cobrado: document.getElementById('reserva-monto').value,
           notas: document.getElementById('reserva-notas').value
@@ -352,21 +622,45 @@
       }
     });
 
-    // Envío de formulario de liberación exclusiva por Administrador
-    document.getElementById('form-liberar-admin').addEventListener('submit', async (e) => {
+    // Envío de reprogramación de horario
+    document.getElementById('form-reprogramar').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        const citaId = document.getElementById('liberar-cita-id').value;
-        const motivo = document.getElementById('liberar-motivo').value;
+        const citaId = document.getElementById('reprogramar-cita-id').value;
+        const [hora_inicio, hora_fin] = document.getElementById('reprogramar-bloque').value.split('|');
+        const payload = {
+          fecha: document.getElementById('reprogramar-fecha').value,
+          hora_inicio,
+          hora_fin,
+          sala_id: document.getElementById('reprogramar-sala').value
+        };
 
-        const res = await citasService.liberarCitaConfirmada(citaId, motivo);
+        const res = await citasService.reprogramarCita(citaId, payload);
         if (res.ok) {
-          alert('El horario confirmado ha sido liberado exitosamente.');
-          cerrarModal('modal-liberar-admin');
+          alert('¡Horario de cita modificado exitosamente!');
+          cerrarModal('modal-reprogramar');
           cargarMatriz(fechaActiva);
         }
       } catch (err) {
-        alert(err.mensaje || 'Error al liberar el horario.');
+        alert(err.mensaje || 'Error al reprogramar la cita.');
+      }
+    });
+
+    // Envío de formulario de cancelación / liberación
+    document.getElementById('form-cancelar').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const citaId = document.getElementById('cancelar-cita-id').value;
+        const motivo = document.getElementById('cancelar-motivo').value;
+
+        const res = await citasService.cancelarCita(citaId, motivo);
+        if (res.ok) {
+          alert('La cita ha sido cancelada exitosamente.');
+          cerrarModal('modal-cancelar');
+          cargarMatriz(fechaActiva);
+        }
+      } catch (err) {
+        alert(err.mensaje || 'Error al cancelar la cita.');
       }
     });
 

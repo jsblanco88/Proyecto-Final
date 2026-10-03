@@ -188,6 +188,38 @@
   color: #FFFFFF;
 }
 
+.btn-mini-reprogramar {
+  background-color: #EBF5FB;
+  color: #2980B9;
+  border: 1px solid #AED6F1;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-mini-reprogramar:hover {
+  background-color: #2980B9;
+  color: #FFFFFF;
+}
+
+.btn-mini-cancelar {
+  background-color: #FDEDEC;
+  color: #922B21;
+  border: 1px solid #F2D7D5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-mini-cancelar:hover {
+  background-color: #C0392B;
+  color: #FFFFFF;
+}
+
 /* 🔴 OCUPADO / EN SESIÓN */
 .celda-ocupado {
   background-color: #FDEDEC;

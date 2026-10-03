@@ -148,8 +148,71 @@ const getMasajistas = async (req, res) => {
   }
 };
 
+/**
+ * Crea un nuevo masajista/terapeuta en el sistema
+ * REGLA ESTRICTA: Exclusivo para el Administrador (rol === 'admin')
+ * @route POST /api/v1/auth/masajistas
+ */
+const createMasajista = async (req, res) => {
+  try {
+    const { nombre, email, password, especialidad } = req.body;
+
+    if (!nombre || !email || !password) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'Nombre, correo electrónico y contraseña son campos obligatorios.'
+      });
+    }
+
+    const emailNormalizado = email.toLowerCase().trim();
+
+    // Verificar si el email ya existe
+    const usuarioExistente = await Usuario.findOne({ where: { email: emailNormalizado } });
+    if (usuarioExistente) {
+      return res.status(409).json({
+        ok: false,
+        mensaje: 'Ya existe un usuario registrado con ese correo electrónico.'
+      });
+    }
+
+    // Hashear contraseña
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const nuevoMasajista = await Usuario.create({
+      nombre: nombre.trim(),
+      email: emailNormalizado,
+      password: passwordHash,
+      rol: 'masoterapeuta',
+      especialidad: especialidad ? especialidad.trim() : 'Masaje Relajante y Terapéutico',
+      activo: true
+    });
+
+    return res.status(201).json({
+      ok: true,
+      mensaje: 'Masajista registrado exitosamente.',
+      masajista: {
+        id: nuevoMasajista.id,
+        nombre: nuevoMasajista.nombre,
+        email: nuevoMasajista.email,
+        rol: nuevoMasajista.rol,
+        especialidad: nuevoMasajista.especialidad,
+        activo: nuevoMasajista.activo
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ [AuthController.createMasajista] Error:', error);
+    return res.status(500).json({
+      ok: false,
+      mensaje: 'Error al registrar el masajista.',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   login,
   getPerfil,
-  getMasajistas
+  getMasajistas,
+  createMasajista
 };

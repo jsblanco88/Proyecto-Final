@@ -120,17 +120,29 @@ stateDiagram-v2
     Completada --> [*]
 ```
 
-### 3.2. Reglas de Confirmación y Liberación Automática
-1. **Reserva Estándar (Creada con > 1 hora de anticipación)**:
-   - `deadline_confirmacion = fecha_hora_inicio - 1 hora`.
-   - El masajista debe ingresar a su panel y pulsar **"Confirmar Sala"**.
-   - Si `hora_actual >= deadline_confirmacion` y el estado sigue en `pendiente_confirmacion`, el sistema cambia el estado a `liberada_automatica` y libera la sala a 🟢 **Disponible**.
-2. **Reserva Urgente / Express (Creada con <= 1 hora de anticipación)**:
-   - `deadline_confirmacion = fecha_hora_creacion + 20 minutos`.
-   - Si transcurren más de 20 minutos desde la creación sin confirmación, el sistema ejecuta la liberación automática inmediata.
-3. **Restricción Estricta de Liberación sobre Citas Confirmadas**:
-   - Cuando una cita tiene estado `confirmada` (🔵), los masajistas tienen **restringido** el botón o endpoint de cancelación.
-   - **Solo el usuario con rol `admin`** tiene permisos para ejecutar `PATCH /api/v1/citas/:id/liberar` sobre una cita confirmada.
+### 3.2. Reglas de Confirmación, Modificación y Privacidad
+1. **Reserva y Confirmación por Masajistas (Clientes Individuales)**:
+   - Los masajistas reservan el espacio y confirman la sala asignada a sus clientes individuales.
+   - Si la cita es estándar (>1h de anticipación): `deadline_confirmacion = fecha_hora_inicio - 1 hora`.
+   - Si la cita es express (<=1h de anticipación): `deadline_confirmacion = fecha_hora_creacion + 20 minutos`.
+   - Si vence el deadline sin confirmación del terapeuta, la sala se libera automáticamente (`liberada_automatica`).
+2. **Restricción Estricta sobre Citas Confirmadas (Solo Administrador)**:
+   - Una vez que la cita adquiere estado `confirmada` (🔵):
+     - **ÚNICAMENTE el Administrador** puede cambiar el horario (`PATCH /api/v1/citas/:id/reprogramar`) o cancelar/liberar la cita (`PATCH /api/v1/citas/:id/liberar` o `/cancelar`).
+     - Los masajistas tienen bloqueada cualquier alteración de citas confirmadas.
+   - En citas `pendiente_confirmacion`, tanto el terapeuta dueño como el Administrador pueden editar el horario o cancelar la reserva previa.
+3. **Privacidad de Clientes**:
+   - Cada masajista **únicamente visualiza el nombre de sus propios clientes individuales**.
+   - En la matriz de disponibilidad (`GET /api/v1/citas/disponibilidad`), las citas pertenecientes a otros terapeutas se presentan anonimizadas con la etiqueta `Cliente Reservado`.
+   - **Solo el Administrador** tiene visibilidad total de los nombres y expedientes de todos los clientes.
+4. **Alta de Masajistas (Exclusivo Administrador)**:
+   - **Solo el Administrador** puede crear y registrar nuevos masajistas (`POST /api/v1/auth/masajistas`).
+5. **Estructura Estricta de la Ficha del Cliente**:
+   - La ficha y registro de cliente contiene exclusivamente: **Nombre**, **Teléfono** (**Obligatorio**) y **Correo Electrónico** (opcional).
+6. **Completación Automática de Citas**:
+   - Toda cita en estado `confirmada` (🔵) u `ocupada` (🔴) se **marca automáticamente como `completada`** una vez que finaliza la hora del bloque (`hora_fin` alcanzada o pasada en la fecha de la cita).
+7. **Control de Inventario y Lista de la Compra**:
+   - El inventario funciona como control de insumos para compra y reposición. El Administrador marca los insumos como **Agotados** (`PATCH /api/v1/inventario/productos/:id/toggle-agotado`) para armar dinámicamente la **Lista de la Compra**. Al adquirirlos o reponerlos, se marcan como disponibles/repuestos.
 
 ---
 
@@ -139,6 +151,7 @@ stateDiagram-v2
 ```mermaid
 erDiagram
     USUARIO ||--o{ CITA : "atiende como masajista"
+    USUARIO ||--o{ CLIENTE : "crea/registra"
     CLIENTE ||--o{ CITA : "solicita reserva"
     SALA ||--o{ CITA : "se realiza en"
     CITA ||--o{ CONSUMO_INSUMO : "utiliza"
@@ -152,16 +165,17 @@ erDiagram
         string email
         string password_hash
         string rol "admin | masoterapeuta"
+        string especialidad
         boolean activo
     }
 
     CLIENTE {
         int id PK
-        string nombre
-        string dni
-        string telefono
-        string email
-        text notas_clinicas
+        string nombre "Obligatorio"
+        string telefono "Obligatorio"
+        string email "Opcional"
+        int creado_por FK "Usuario"
+        boolean activo
     }
 
     SALA {
@@ -227,13 +241,21 @@ erDiagram
 | Método | Endpoint | Middleware / Rol | Descripción y Reglas de Negocio |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/login` | Público | Autentica usuario y retorna JWT + Rol (`admin` o `masoterapeuta`). |
+| `GET` | `/api/v1/auth/me` | Autenticado | Retorna el perfil y rol del usuario en sesión. |
+| `GET` | `/api/v1/auth/masajistas` | Autenticado | Lista todos los terapeutas/masajistas activos. |
+| `POST` | `/api/v1/auth/masajistas` | **Solo Admin** | **Exclusivo Administrador**: Registra un nuevo masajista en el sistema. |
 | `GET` | `/api/v1/salas` | Autenticado | Retorna las 4 salas activas (`Agua`, `Aire`, `Tierra`, `Fuego`). |
-| `GET` | `/api/v1/citas/disponibilidad` | Autenticado | Devuelve la matriz de 12 bloques para las 4 salas en la fecha indicada. Ejecuta validación de liberación automática al vuelo. |
-| `POST` | `/api/v1/citas` | Masajista / Admin | Crea reserva. Calcula automáticamente el `deadline_confirmacion` (1h antes o +20min si es express). |
-| `PATCH` | `/api/v1/citas/:id/confirmar` | Masajista / Admin | El masajista confirma la sala asignada dentro del plazo. Cambia estado a `confirmada`. |
-| `PATCH` | `/api/v1/citas/:id/liberar` | **Solo Admin** | **Exclusivo Administrador**: Libera o cancela una cita que ya estaba en estado `confirmada`. |
-| `PATCH` | `/api/v1/citas/:id/completar` | Masajista / Admin | Marca la cita como completada y descuenta los insumos consumidos. |
-| `GET` | `/api/v1/citas/historial` | Autenticado | Listado de citas con filtros de sala, terapeuta y estado. |
+| `GET` | `/api/v1/citas/disponibilidad` | Autenticado | Matriz de 12 bloques x 4 salas. Anonimiza nombres de clientes ajenos para masajistas. |
+| `POST` | `/api/v1/citas` | Masajista / Admin | Crea reserva. Autoasigna al masajista si es terapeuta. Calcula `deadline_confirmacion`. |
+| `PATCH` | `/api/v1/citas/:id/confirmar` | Masajista / Admin | El masajista confirma su sala dentro del plazo (1h / 20min). Pasa a `confirmada`. |
+| `PATCH` | `/api/v1/citas/:id/reprogramar` | Masajista / Admin | Modifica fecha/horario/sala. **Si está confirmada, SOLO Admin puede reprogramar**. |
+| `PATCH` | `/api/v1/citas/:id/cancelar` | Masajista / Admin | Cancela cita. **Si está confirmada, SOLO Admin puede cancelar/liberar**. |
+| `PATCH` | `/api/v1/citas/:id/liberar` | **Solo Admin** | **Exclusivo Administrador**: Libera o cancela cita en estado `confirmada`. |
+| `PATCH` | `/api/v1/citas/:id/completar` | Masajista / Admin | Marca cita completada y descuenta insumos consumidos. |
+| `GET` | `/api/v1/citas/historial` | Autenticado | Historial filtrado (los masajistas solo ven sus propias citas). |
+| `GET` | `/api/v1/clientes` | Autenticado | Listado de clientes (los masajistas solo ven sus clientes individuales; Admin ve todos). |
+| `POST` | `/api/v1/clientes` | Autenticado | Registra un nuevo cliente asociándolo al terapeuta creador. |
+| `GET` | `/api/v1/clientes/:id` | Autenticado | Ficha del cliente (masajista restringido a sus clientes). |
 | `GET` | `/api/v1/inventario/productos` | Solo Admin | Lista stock de aceites, cremas, toallas y esencias. |
 | `POST` | `/api/v1/inventario/compras` | Solo Admin | Registra compra de lote de insumos a proveedores. |
 | `GET` | `/api/v1/dashboard/stats` | Autenticado | KPIs de ocupación por salas, citas e ingresos. |
