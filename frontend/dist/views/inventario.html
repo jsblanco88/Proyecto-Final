@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Inventarios | Spa Management</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/global-CgXFyP9w.css">
+  <link rel="stylesheet" crossorigin href="/assets/dashboard-BZqqUrnS.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="content-area">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h1>Control de Insumos e Inventario (Módulo 2)</h1>
+            <p style="color: #7F8C8D;">Abastecimiento, stock disponible, compras a proveedores y métricas de consumo</p>
+          </div>
+          <div style="display: flex; gap: 0.8rem;">
+            <button class="btn btn-outline" onclick="abrirModal('modal-nuevo-producto')">
+              <span>➕</span>
+              <span>Nuevo Insumo</span>
+            </button>
+            <button class="btn btn-primary" onclick="abrirModal('modal-compra')">
+              <span>🛒</span>
+              <span>Registrar Compra</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Gráfica de Consumo de Insumos -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <h3>Consumo de Insumos por Tratamiento</h3>
+          <div style="height: 250px; position: relative; margin-top: 1rem;">
+            <canvas id="chart-consumo"></canvas>
+          </div>
+        </div>
+
+        <!-- Tabla de Insumos -->
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Insumo / Producto</th>
+                <th>Categoría</th>
+                <th>Stock Actual</th>
+                <th>Stock Mínimo</th>
+                <th>En Reserva</th>
+                <th>Unidad</th>
+                <th>Costo Unit.</th>
+                <th>Estado Alerta</th>
+              </tr>
+            </thead>
+            <tbody id="inventario-body">
+              <tr>
+                <td colspan="9" style="text-align: center; color: #7F8C8D; padding: 2rem;">Cargando inventario...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR COMPRA A PROVEEDOR -->
+  <div class="modal-overlay" id="modal-compra">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrar Compra de Insumos</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-compra')">&times;</button>
+      </div>
+      <form id="form-compra">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Producto a Abastecer</label>
+            <select id="compra-producto" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label>Proveedor</label>
+            <select id="compra-proveedor" class="form-control"></select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Cantidad</label>
+              <input type="number" id="compra-cantidad" class="form-control" value="10" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Costo Unitario (€)</label>
+              <input type="number" id="compra-costo" class="form-control" step="0.5" value="12.50" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>N° Factura / Albarán</label>
+            <input type="text" id="compra-factura" class="form-control" placeholder="FAC-2026-001">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-compra')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Ingresar al Inventario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO PRODUCTO -->
+  <div class="modal-overlay" id="modal-nuevo-producto">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Nuevo Insumo en Catálogo</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-nuevo-producto')">&times;</button>
+      </div>
+      <form id="form-nuevo-producto">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nombre del Producto</label>
+            <input type="text" id="nuevo-nombre" class="form-control" placeholder="ej. Aceite Esencial de Romero" required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Categoría</label>
+              <select id="nuevo-categoria" class="form-control">
+                <option value="Aceites y Cremas">Aceites y Cremas</option>
+                <option value="Aromaterapia">Aromaterapia</option>
+                <option value="Higiene y Descartables">Higiene y Descartables</option>
+                <option value="Equipamiento">Equipamiento</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Unidad de Medida</label>
+              <input type="text" id="nuevo-unidad" class="form-control" value="Botellas" required>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Stock Inicial</label>
+              <input type="number" id="nuevo-stock" class="form-control" value="10" min="0">
+            </div>
+            <div class="form-group">
+              <label>Stock Mínimo de Alerta</label>
+              <input type="number" id="nuevo-minimo" class="form-control" value="5" min="1">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-producto')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Insumo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/public/assets/js/api/axiosClient.js"></script>
+  <script src="/public/assets/js/services/authService.js"></script>
+  <script src="/public/assets/js/services/inventarioService.js"></script>
+  <script src="/public/assets/js/components/navbarSidebar.js"></script>
+
+  <script>
+    let chartConsumo = null;
+    function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+    function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+
+    async function cargarInventario() {
+      try {
+        if (!authService.esAdmin()) {
+          alert('Acceso restringido: Solo el Administrador puede gestionar el inventario.');
+          window.location.href = '/views/reservas.html';
+          return;
+        }
+
+        const [productos, proveedores, metricas] = await Promise.all([
+          inventarioService.getProductos(),
+          inventarioService.getProveedores(),
+          inventarioService.getMetricasConsumo()
+        ]);
+
+        const tbody = document.getElementById('inventario-body');
+        tbody.innerHTML = productos.map(p => {
+          const bajoStock = p.stock_actual <= p.stock_minimo;
+          return `
+            <tr>
+              <td><strong>#${p.id}</strong></td>
+              <td><strong>${p.nombre}</strong></td>
+              <td>${p.categoria}</td>
+              <td><span style="font-size: 1.1rem; font-weight: 700; color: ${bajoStock ? '#C0392B' : '#196F3D'}">${p.stock_actual}</span></td>
+              <td>${p.stock_minimo}</td>
+              <td>${p.reserva}</td>
+              <td>${p.unidad_medida}</td>
+              <td>€${parseFloat(p.costo_unitario).toFixed(2)}</td>
+              <td>
+                ${bajoStock 
+                  ? '<span class="badge badge-rojo">⚠️ Reponer Stock</span>' 
+                  : '<span class="badge badge-verde">Óptimo</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Poblar selects de compra
+        document.getElementById('compra-producto').innerHTML = productos.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('');
+        document.getElementById('compra-proveedor').innerHTML = proveedores.map(pr => `<option value="${pr.id}">${pr.nombre}</option>`).join('');
+
+        // Renderizar gráfico de consumo
+        renderizarGrafico(metricas);
+
+      } catch (e) {
+        console.error('Error cargando inventario:', e);
+      }
+    }
+
+    function renderizarGrafico(metricas) {
+      const ctx = document.getElementById('chart-consumo').getContext('2d');
+      if (chartConsumo) chartConsumo.destroy();
+
+      const labels = metricas.labels.length ? metricas.labels : ['Aceite Almendras', 'Lavanda', 'Crema Árnica', 'Toallas'];
+      const data = metricas.data.length ? metricas.data : [14, 8, 12, 25];
+
+      chartConsumo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Unidades Consumidas',
+            data: data,
+            backgroundColor: '#16A085',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    document.getElementById('form-compra').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          producto_id: document.getElementById('compra-producto').value,
+          proveedor_id: document.getElementById('compra-proveedor').value,
+          cantidad: document.getElementById('compra-cantidad').value,
+          costo_unitario: document.getElementById('compra-costo').value,
+          numero_factura: document.getElementById('compra-factura').value
+        };
+        const res = await inventarioService.registrarCompra(payload);
+        if (res.ok) {
+          alert('Compra registrada exitosamente.');
+          cerrarModal('modal-compra');
+          cargarInventario();
+        }
+      } catch (err) { alert(err.mensaje || 'Error al registrar compra.'); }
+    });
+
+    document.getElementById('form-nuevo-producto').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          nombre: document.getElementById('nuevo-nombre').value,
+          categoria: document.getElementById('nuevo-categoria').value,
+          unidad_medida: document.getElementById('nuevo-unidad').value,
+          stock_actual: document.getElementById('nuevo-stock').value,
+          stock_minimo: document.getElementById('nuevo-minimo').value
+        };
+        const res = await inventarioService.createProducto(payload);
+        if (res.ok) {
+          alert('Producto agregado al catálogo.');
+          cerrarModal('modal-nuevo-producto');
+          cargarInventario();
+        }
+      } catch (err) { alert(err.mensaje || 'Error al crear producto.'); }
+    });
+
+    document.addEventListener('DOMContentLoaded', cargarInventario);
+  </script>
+
+</body>
+</html>

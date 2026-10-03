@@ -1,0 +1,321 @@
+/**
+ * ==============================================================================
+ * HOJA DE ESTILOS: PANEL INTERNO, MATRIZ DE SALAS Y DASHBOARD
+ * ==============================================================================
+ * 
+ * Estilos para la Matriz de las 4 Salas (Agua, Aire, Tierra, Fuego) y los
+ * 12 Bloques de Horario (8:00 AM a 8:00 PM), KPIs y tablas de gestión.
+ */
+
+/* ==========================================================================
+   MATRIZ DE HORARIOS Y 4 SALAS (MÓDULO 1)
+   ========================================================================== */
+.matriz-container {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  margin-top: 1.5rem;
+}
+
+.matriz-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+.matriz-table th,
+.matriz-table td {
+  padding: 0.8rem 1rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.matriz-table th {
+  background-color: #F8F9F9;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+/* Cabeceras de Salas Temáticas */
+.th-hora {
+  width: 160px;
+  background-color: #EAEDED !important;
+  color: var(--dark-color);
+}
+
+.th-sala-agua {
+  border-top: 4px solid var(--sala-agua) !important;
+  background-color: #EBF5FB !important;
+  color: #1B4F72 !important;
+}
+
+.th-sala-aire {
+  border-top: 4px solid var(--sala-aire) !important;
+  background-color: #E8F8F5 !important;
+  color: #0E6251 !important;
+}
+
+.th-sala-tierra {
+  border-top: 4px solid var(--sala-tierra) !important;
+  background-color: #FEF9E7 !important;
+  color: #7D6608 !important;
+}
+
+.th-sala-fuego {
+  border-top: 4px solid var(--sala-fuego) !important;
+  background-color: #FDEDEC !important;
+  color: #78281F !important;
+}
+
+.celda-hora {
+  font-weight: 700;
+  color: #566573;
+  background-color: #F8F9F9;
+  font-size: 0.85rem;
+}
+
+/* Celdas según Código Semáforo */
+.celda-slot {
+  height: 75px;
+  vertical-align: middle;
+  transition: var(--transition);
+  position: relative;
+}
+
+/* 🟢 DISPONIBLE */
+.celda-disponible {
+  background-color: #EAFAF1;
+  color: #196F3D;
+  cursor: pointer;
+}
+
+.celda-disponible:hover {
+  background-color: #D4EFDF;
+  box-shadow: inset 0 0 0 2px #27AE60;
+}
+
+.btn-slot-reservar {
+  background: transparent;
+  border: 1px dashed #27AE60;
+  color: #196F3D;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--border-radius);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: var(--transition);
+}
+
+.btn-slot-reservar:hover {
+  background: #27AE60;
+  color: #FFFFFF;
+}
+
+/* 🟡 RESERVADO (PENDIENTE DE CONFIRMACIÓN) */
+.celda-reservado {
+  background-color: #FEF9E7;
+  border-left: 4px solid #F39C12 !important;
+  text-align: left !important;
+  padding: 0.5rem 0.8rem !important;
+}
+
+.slot-cliente {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #7D6608;
+}
+
+.slot-terapeuta {
+  font-size: 0.8rem;
+  color: #9A7D0A;
+}
+
+.slot-acciones {
+  margin-top: 0.3rem;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.btn-mini-confirmar {
+  background-color: #F39C12;
+  color: #FFFFFF;
+  border: none;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-mini-confirmar:hover {
+  background-color: #D68910;
+}
+
+/* 🔵 CONFIRMADO */
+.celda-confirmado {
+  background-color: #EBF5FB;
+  border-left: 4px solid #2980B9 !important;
+  text-align: left !important;
+  padding: 0.5rem 0.8rem !important;
+}
+
+.celda-confirmado .slot-cliente {
+  color: #1B4F72;
+}
+
+.celda-confirmado .slot-terapeuta {
+  color: #2471A3;
+}
+
+.btn-mini-liberar {
+  background-color: #FDEDEC;
+  color: #C0392B;
+  border: 1px solid #FADBD8;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-mini-liberar:hover {
+  background-color: #C0392B;
+  color: #FFFFFF;
+}
+
+/* 🔴 OCUPADO / EN SESIÓN */
+.celda-ocupado {
+  background-color: #FDEDEC;
+  border-left: 4px solid #E74C3C !important;
+  color: #78281F;
+  text-align: left !important;
+  padding: 0.5rem 0.8rem !important;
+}
+
+/* Leyenda del Semáforo */
+.semaforo-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  background: var(--card-bg);
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.leyenda-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.leyenda-color.verde { background-color: var(--status-disponible); }
+.leyenda-color.amarillo { background-color: var(--status-reservado); }
+.leyenda-color.azul { background-color: var(--status-confirmado); }
+.leyenda-color.rojo { background-color: var(--status-ocupado); }
+
+/* ==========================================================================
+   KPIS Y DASHBOARD
+   ========================================================================== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.kpi-card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.kpi-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: #FFFFFF;
+}
+
+.kpi-icon.blue { background-color: #2980B9; }
+.kpi-icon.green { background-color: #27AE60; }
+.kpi-icon.orange { background-color: #E67E22; }
+.kpi-icon.purple { background-color: #8E44AD; }
+
+.kpi-info h4 {
+  font-size: 0.85rem;
+  color: #7F8C8D;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--dark-color);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* ==========================================================================
+   TABLAS DE HISTORIAL, INVENTARIO Y CLIENTES
+   ========================================================================== */
+.data-table-container {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.9rem 1.2rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+  background-color: #F8F9F9;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.data-table tr:hover {
+  background-color: #F4F6F7;
+}

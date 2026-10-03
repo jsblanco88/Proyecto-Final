@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Principal | Spa Management</title>
+  <link rel="stylesheet" href="/public/assets/css/global.css">
+  <link rel="stylesheet" href="/public/assets/css/navbar-sidebar.css">
+  <link rel="stylesheet" href="/public/assets/css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="content-area">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h1>Dashboard y Métricas de Operación</h1>
+            <p style="color: #7F8C8D;">Resumen ejecutivo en tiempo real de ocupación de salas, citas e ingresos</p>
+          </div>
+        </div>
+
+        <!-- Tarjetas de KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon blue">📅</div>
+            <div class="kpi-info">
+              <h4>Total Citas</h4>
+              <div class="kpi-value" id="kpi-total-citas">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green">✓</div>
+            <div class="kpi-info">
+              <h4>Completadas</h4>
+              <div class="kpi-value" id="kpi-completadas">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon orange">⏳</div>
+            <div class="kpi-info">
+              <h4>Pendientes</h4>
+              <div class="kpi-value" id="kpi-pendientes">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon purple">💰</div>
+            <div class="kpi-info">
+              <h4>Ingresos Totales</h4>
+              <div class="kpi-value" id="kpi-ingresos">€0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráficos Estadísticos -->
+        <div class="charts-grid">
+          <div class="card">
+            <h3>Demanda Mensual (Citas por Mes)</h3>
+            <div style="height: 280px; position: relative; margin-top: 1rem;">
+              <canvas id="chart-citas"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Ocupación por Sala Temática</h3>
+            <div style="height: 280px; position: relative; margin-top: 1rem;">
+              <canvas id="chart-salas"></canvas>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/public/assets/js/api/axiosClient.js"></script>
+  <script src="/public/assets/js/services/authService.js"></script>
+  <script src="/public/assets/js/services/dashboardService.js"></script>
+  <script src="/public/assets/js/components/navbarSidebar.js"></script>
+
+  <script>
+    let chartCitas = null;
+    let chartSalas = null;
+
+    async function cargarDashboard() {
+      try {
+        const res = await dashboardService.getStats();
+        if (!res.ok) return;
+
+        // 1. Cargar KPIs
+        document.getElementById('kpi-total-citas').textContent = res.kpis.totalCitas;
+        document.getElementById('kpi-completadas').textContent = res.kpis.citasCompletadas;
+        document.getElementById('kpi-pendientes').textContent = res.kpis.citasPendientes;
+        document.getElementById('kpi-ingresos').textContent = `€${parseFloat(res.kpis.totalIngresos).toFixed(2)}`;
+
+        // 2. Gráfico de Citas por Mes
+        const ctxCitas = document.getElementById('chart-citas').getContext('2d');
+        if (chartCitas) chartCitas.destroy();
+
+        chartCitas = new Chart(ctxCitas, {
+          type: 'line',
+          data: {
+            labels: res.graficos.meses,
+            datasets: [{
+              label: 'Citas Atendidas',
+              data: res.graficos.citasPorMes,
+              borderColor: '#2980B9',
+              backgroundColor: 'rgba(41, 128, 185, 0.15)',
+              tension: 0.3,
+              fill: true,
+              pointRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+
+        // 3. Gráfico de Ocupación por Sala (Agua, Aire, Tierra, Fuego)
+        const ctxSalas = document.getElementById('chart-salas').getContext('2d');
+        if (chartSalas) chartSalas.destroy();
+
+        chartSalas = new Chart(ctxSalas, {
+          type: 'doughnut',
+          data: {
+            labels: res.ocupacionSalas.map(s => s.nombre),
+            datasets: [{
+              data: res.ocupacionSalas.map(s => s.citas || 1),
+              backgroundColor: ['#2980B9', '#16A085', '#B7950B', '#C0392B']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+
+      } catch (e) {
+        console.error('Error cargando dashboard:', e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarDashboard);
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,265 @@
+/**
+ * ==============================================================================
+ * HOJA DE ESTILOS GLOBALES: VARIABLES, RESET Y UTILIDADES
+ * ==============================================================================
+ * 
+ * Define la paleta de colores, tipografías y reglas de diseño responsivo
+ * para todo el Sistema de Gestión Integral de Spa.
+ */
+
+:root {
+  /* Paleta Primaria y Neutros */
+  --primary-color: #1A5276;       /* Azul Spa Profundo */
+  --primary-light: #2980B9;       /* Azul Claro */
+  --secondary-color: #16A085;     /* Verde Menta / Aire */
+  --dark-color: #2C3E50;          /* Gris Oscuro / Texto */
+  --light-bg: #F4F6F7;            /* Fondo General */
+  --card-bg: #FFFFFF;             /* Fondo de Tarjetas y Modales */
+  --border-color: #E2E8F0;        /* Bordes sutiles */
+  
+  /* Paleta Temática de las 4 Salas */
+  --sala-agua: #2980B9;           /* 💧 Sala Agua */
+  --sala-aire: #16A085;           /* 💨 Sala Aire */
+  --sala-tierra: #B7950B;         /* 🌿 Sala Tierra */
+  --sala-fuego: #C0392B;          /* 🔥 Sala Fuego */
+  
+  /* Semáforo de Disponibilidad de Salas */
+  --status-disponible: #27AE60;   /* 🟢 Verde - Libre */
+  --status-reservado: #F39C12;    /* 🟡 Amarillo - Pendiente de Confirmación */
+  --status-confirmado: #2980B9;   /* 🔵 Azul - Confirmado por Masajista */
+  --status-ocupado: #E74C3C;      /* 🔴 Rojo - Ocupado / En sesión */
+  
+  /* Tipografía y Sombras */
+  --font-main: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --border-radius: 8px;
+  --transition: all 0.25s ease-in-out;
+}
+
+/* Reset y Reglas Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--light-bg);
+  color: var(--dark-color);
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Layout General con Sidebar */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 250px; /* Ancho del sidebar */
+  transition: var(--transition);
+}
+
+.content-area {
+  padding: 2rem;
+  flex: 1;
+}
+
+/* Encabezados y Títulos */
+h1, h2, h3, h4, h5 {
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Botones y Acciones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: #154360;
+}
+
+.btn-success {
+  background-color: var(--status-disponible);
+  color: #FFFFFF;
+}
+
+.btn-warning {
+  background-color: var(--status-reservado);
+  color: #FFFFFF;
+}
+
+.btn-danger {
+  background-color: var(--status-ocupado);
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: #95A5A6;
+  color: #FFFFFF;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--dark-color);
+}
+
+.btn-outline:hover {
+  background-color: #EDF2F7;
+}
+
+/* Tarjetas y Contenedores */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+
+/* Insignias y Badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.badge-verde { background-color: #D4EFDF; color: #196F3D; }
+.badge-amarillo { background-color: #FCF3CF; color: #B7950B; }
+.badge-azul { background-color: #D6EAF8; color: #1B4F72; }
+.badge-rojo { background-color: #FADBD8; color: #78281F; }
+
+/* Modales */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition);
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-box {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 550px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  padding: 1.2rem 1.5rem;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  background-color: #F8F9F9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Formularios */
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.15);
+}

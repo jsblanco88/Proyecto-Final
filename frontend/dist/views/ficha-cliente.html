@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ficha de Clientes | Spa Management</title>
+  <link rel="stylesheet" crossorigin href="/assets/global-CgXFyP9w.css">
+  <link rel="stylesheet" crossorigin href="/assets/dashboard-BZqqUrnS.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="content-area">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h1>Fichas y Expedientes de Clientes</h1>
+            <p style="color: #7F8C8D;">Datos de contacto, notas clínicas, preferencias y tratamientos históricos</p>
+          </div>
+          <button class="btn btn-primary" onclick="abrirModal('modal-nuevo-cliente')">
+            <span>➕</span>
+            <span>Nuevo Cliente</span>
+          </button>
+        </div>
+
+        <!-- Barra de búsqueda -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display: flex; gap: 1rem;">
+            <input type="text" id="busqueda-cliente" class="form-control" placeholder="Buscar por nombre, DNI o teléfono..." oninput="buscarClientes()">
+            <button class="btn btn-primary" onclick="buscarClientes()">🔍 Buscar</button>
+          </div>
+        </div>
+
+        <!-- Tabla de Clientes -->
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>DNI / Identificación</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Notas Clínicas / Preferencias</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="clientes-body">
+              <tr>
+                <td colspan="7" style="text-align: center; color: #7F8C8D; padding: 2rem;">Cargando clientes...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO CLIENTE -->
+  <div class="modal-overlay" id="modal-nuevo-cliente">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-cliente-titulo">Registrar Nuevo Cliente</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-nuevo-cliente')">&times;</button>
+      </div>
+      <form id="form-cliente">
+        <input type="hidden" id="edit-cliente-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nombre y Apellidos</label>
+            <input type="text" id="cliente-nombre" class="form-control" placeholder="ej. María López" required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>DNI / Documento</label>
+              <input type="text" id="cliente-dni" class="form-control" placeholder="12345678Z">
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="tel" id="cliente-telefono" class="form-control" placeholder="+34 600 000 000" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="cliente-email" class="form-control" placeholder="cliente@email.com">
+          </div>
+          <div class="form-group">
+            <label>Notas Clínicas / Alergias / Preferencias</label>
+            <textarea id="cliente-notas" class="form-control" rows="3" placeholder="Alergias a esencias, zonas con dolor lumbar, presión preferida..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-cliente')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Ficha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EXPEDIENTE COMPLETO E HISTORIAL -->
+  <div class="modal-overlay" id="modal-detalle-cliente">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="detalle-nombre">Expediente del Cliente</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-detalle-cliente')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="detalle-info" style="margin-bottom: 1.5rem; background: #F8F9F9; padding: 1rem; border-radius: 6px;"></div>
+        <h4>Historial de Citas del Cliente</h4>
+        <div id="detalle-citas" style="margin-top: 0.8rem; max-height: 250px; overflow-y: auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-detalle-cliente')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/public/assets/js/api/axiosClient.js"></script>
+  <script src="/public/assets/js/services/authService.js"></script>
+  <script src="/public/assets/js/services/clientesService.js"></script>
+  <script src="/public/assets/js/components/navbarSidebar.js"></script>
+
+  <script>
+    function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+    function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+
+    async function buscarClientes() {
+      const q = document.getElementById('busqueda-cliente').value;
+      try {
+        const clientes = await clientesService.getClientes(q);
+        const tbody = document.getElementById('clientes-body');
+        
+        if (clientes.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #7F8C8D;">No se encontraron clientes.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = clientes.map(c => `
+          <tr>
+            <td><strong>#${c.id}</strong></td>
+            <td><strong>${c.nombre}</strong></td>
+            <td>${c.dni || 'N/A'}</td>
+            <td>${c.telefono}</td>
+            <td>${c.email || 'N/A'}</td>
+            <td style="max-width: 250px; font-size: 0.85rem; color: #566573;">${c.notas_clinicas || 'Sin notas registradas.'}</td>
+            <td>
+              <button class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" onclick="verExpediente(${c.id})">
+                👁️ Ver Ficha
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function verExpediente(clienteId) {
+      try {
+        const cliente = await clientesService.getClienteById(clienteId);
+        document.getElementById('detalle-nombre').textContent = `Expediente: ${cliente.nombre}`;
+        document.getElementById('detalle-info').innerHTML = `
+          <p>📞 <strong>Teléfono:</strong> ${cliente.telefono} | 🆔 <strong>DNI:</strong> ${cliente.dni || 'N/A'}</p>
+          <p style="margin-top: 0.4rem;">🩺 <strong>Notas Clínicas:</strong> ${cliente.notas_clinicas || 'Ninguna'}</p>
+        `;
+
+        const contCitas = document.getElementById('detalle-citas');
+        if (!cliente.citas || cliente.citas.length === 0) {
+          contCitas.innerHTML = `<p style="color: #7F8C8D; font-size: 0.9rem;">El cliente aún no registra citas anteriores.</p>`;
+        } else {
+          contCitas.innerHTML = `
+            <table class="data-table" style="font-size: 0.85rem;">
+              <thead><tr><th>Fecha</th><th>Sala</th><th>Servicio</th><th>Estado</th></tr></thead>
+              <tbody>
+                ${cliente.citas.map(ct => `
+                  <tr>
+                    <td>${ct.fecha} (${ct.hora_inicio})</td>
+                    <td>${ct.sala ? ct.sala.nombre : 'Sala'}</td>
+                    <td>${ct.servicio_solicitado}</td>
+                    <td><span class="badge ${ct.estado === 'completada' ? 'badge-verde' : 'badge-azul'}">${ct.estado}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+
+        abrirModal('modal-detalle-cliente');
+      } catch (e) { alert('Error al cargar ficha.'); }
+    }
+
+    document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          nombre: document.getElementById('cliente-nombre').value,
+          dni: document.getElementById('cliente-dni').value,
+          telefono: document.getElementById('cliente-telefono').value,
+          email: document.getElementById('cliente-email').value,
+          notas_clinicas: document.getElementById('cliente-notas').value
+        };
+
+        const res = await clientesService.createCliente(payload);
+        if (res.ok) {
+          alert('Cliente registrado exitosamente.');
+          cerrarModal('modal-nuevo-cliente');
+          buscarClientes();
+        }
+      } catch (err) { alert(err.mensaje || 'Error al guardar cliente.'); }
+    });
+
+    document.addEventListener('DOMContentLoaded', buscarClientes);
+  </script>
+
+</body>
+</html>

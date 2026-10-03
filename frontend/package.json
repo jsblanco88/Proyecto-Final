@@ -1,0 +1,26 @@
+{
+  "name": "spa-management-frontend",
+  "version": "1.0.0",
+  "description": "Frontend desacoplado para el Sistema de Gestión Integral de Spa (Vanilla JS + Vite)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "spa",
+    "frontend",
+    "vanilla-js",
+    "vite"
+  ],
+  "author": "Equipo de Desarrollo Módulo 8",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "sweetalert2": "^11.12.0"
+  },
+  "devDependencies": {
+    "vite": "^5.3.3"
+  }
+}

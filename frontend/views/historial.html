@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de Citas | Spa Management</title>
+  <link rel="stylesheet" href="/public/assets/css/global.css">
+  <link rel="stylesheet" href="/public/assets/css/navbar-sidebar.css">
+  <link rel="stylesheet" href="/public/assets/css/dashboard.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="navbar-container"></div>
+
+      <main class="content-area">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <div>
+            <h1>Historial de Citas y Sesiones</h1>
+            <p style="color: #7F8C8D;">Registro cronológico y seguimiento de estados de atención</p>
+          </div>
+        </div>
+
+        <!-- Filtros de búsqueda -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+              <label>Estado</label>
+              <select id="filtro-estado" class="form-control">
+                <option value="">Todos los Estados</option>
+                <option value="pendiente_confirmacion">Pendiente de Confirmación</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="ocupada">En Sesión</option>
+                <option value="completada">Completada</option>
+                <option value="cancelada">Cancelada</option>
+                <option value="liberada_automatica">Liberada Automáticamente</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label>Sala Temática</label>
+              <select id="filtro-sala" class="form-control">
+                <option value="">Todas las Salas</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label>Desde</label>
+              <input type="date" id="filtro-desde" class="form-control">
+            </div>
+            <button class="btn btn-primary" onclick="cargarHistorial()">
+              🔍 Filtrar
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de Datos -->
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha y Hora</th>
+                <th>Sala</th>
+                <th>Cliente</th>
+                <th>Masajista</th>
+                <th>Servicio</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="historial-body">
+              <tr>
+                <td colspan="9" style="text-align: center; color: #7F8C8D; padding: 2rem;">Cargando historial...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL COMPLETAR CITA & DESCONTAR INSUMOS -->
+  <div class="modal-overlay" id="modal-completar">
+    <div class="modal-box">
+      <div class="modal-header" style="background-color: var(--status-disponible);">
+        <h3>Completar Cita & Descarga de Insumos</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-completar')">&times;</button>
+      </div>
+      <form id="form-completar-cita">
+        <input type="hidden" id="completar-cita-id">
+        <div class="modal-body">
+          <p style="margin-bottom: 1rem; color: #566573;">
+            Al marcar esta cita como completada, puede opcionalmente registrar el consumo de insumos para actualizar el inventario.
+          </p>
+          <div class="form-group">
+            <label>Insumo Utilizado (Opcional)</label>
+            <select id="completar-producto" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label>Cantidad Consumida</label>
+            <input type="number" id="completar-cantidad" class="form-control" value="1" min="1">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModal('modal-completar')">Volver</button>
+          <button type="submit" class="btn btn-success">Finalizar Sesión</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/public/assets/js/api/axiosClient.js"></script>
+  <script src="/public/assets/js/services/authService.js"></script>
+  <script src="/public/assets/js/services/citasService.js"></script>
+  <script src="/public/assets/js/services/inventarioService.js"></script>
+  <script src="/public/assets/js/components/navbarSidebar.js"></script>
+
+  <script>
+    function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+    function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+
+    async function cargarHistorial() {
+      try {
+        const filtros = {};
+        const estado = document.getElementById('filtro-estado').value;
+        const salaId = document.getElementById('filtro-sala').value;
+        const desde = document.getElementById('filtro-desde').value;
+
+        if (estado) filtros.estado = estado;
+        if (salaId) filtros.sala_id = salaId;
+        if (desde) filtros.fecha_desde = desde;
+
+        const res = await citasService.getHistorial(filtros);
+        const tbody = document.getElementById('historial-body');
+        const esAdmin = authService.esAdmin();
+
+        if (!res.ok || res.citas.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #7F8C8D;">No se encontraron citas con los filtros seleccionados.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = res.citas.map(c => {
+          let badgeClass = 'badge-verde';
+          let estadoTexto = c.estado;
+
+          if (c.estado === 'pendiente_confirmacion') { badgeClass = 'badge-amarillo'; estadoTexto = 'Pendiente Conf.'; }
+          else if (c.estado === 'confirmada') { badgeClass = 'badge-azul'; estadoTexto = 'Confirmada'; }
+          else if (c.estado === 'ocupada') { badgeClass = 'badge-rojo'; estadoTexto = 'En Sesión'; }
+          else if (c.estado === 'completada') { badgeClass = 'badge-verde'; estadoTexto = 'Completada'; }
+          else if (c.estado === 'cancelada') { badgeClass = 'badge-rojo'; estadoTexto = 'Cancelada Admin'; }
+          else if (c.estado === 'liberada_automatica') { badgeClass = 'badge-amarillo'; estadoTexto = 'Liberada Auto (Vencida)'; }
+
+          return `
+            <tr>
+              <td><strong>#${c.id}</strong></td>
+              <td>${c.fecha} • ${c.hora_inicio} - ${c.hora_fin}</td>
+              <td><span style="color: ${c.sala ? c.sala.color_tema : '#2C3E50'}; font-weight: 700;">${c.sala ? c.sala.nombre : 'Sala'}</span></td>
+              <td>${c.cliente ? c.cliente.nombre : 'N/A'}</td>
+              <td>${c.masajista ? c.masajista.nombre : 'N/A'}</td>
+              <td>${c.servicio_solicitado}</td>
+              <td>€${parseFloat(c.monto_cobrado).toFixed(2)}</td>
+              <td><span class="badge ${badgeClass}">${estadoTexto}</span></td>
+              <td>
+                ${c.estado === 'confirmada' || c.estado === 'ocupada' ? `
+                  <button class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="prepararCompletar(${c.id})">
+                    ✓ Completar
+                  </button>
+                ` : '-'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (e) {
+        console.error('Error cargando historial:', e);
+      }
+    }
+
+    async function prepararCompletar(citaId) {
+      document.getElementById('completar-cita-id').value = citaId;
+      try {
+        const prods = await inventarioService.getProductos();
+        const sel = document.getElementById('completar-producto');
+        sel.innerHTML = '<option value="">Ninguno / Sin gasto de insumo</option>' + 
+          prods.map(p => `<option value="${p.id}">${p.nombre} (Stock: ${p.stock_actual})</option>`).join('');
+      } catch (e) {}
+      abrirModal('modal-completar');
+    }
+
+    document.getElementById('form-completar-cita').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const citaId = document.getElementById('completar-cita-id').value;
+        const prodId = document.getElementById('completar-producto').value;
+        const cant = document.getElementById('completar-cantidad').value;
+
+        const insumos = prodId ? [{ producto_id: prodId, cantidad: cant }] : [];
+
+        const res = await citasService.completarCita(citaId, insumos);
+        if (res.ok) {
+          alert('Cita completada exitosamente.');
+          cerrarModal('modal-completar');
+          cargarHistorial();
+        }
+      } catch (err) {
+        alert(err.mensaje || 'Error al completar la cita.');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const salas = await citasService.getSalas();
+        document.getElementById('filtro-sala').innerHTML += salas.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+      } catch (e) {}
+      cargarHistorial();
+    });
+  </script>
+
+</body>
+</html>

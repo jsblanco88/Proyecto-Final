@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso al Sistema | Spa Management</title>
+  <link rel="stylesheet" href="/public/assets/css/global.css">
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
+      padding: 1.5rem;
+    }
+    .login-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-logo {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    .quick-access {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+    }
+    .quick-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">🌿</div>
+        <h2>Sistema de Gestión de Spa</h2>
+        <p style="color: #7F8C8D; font-size: 0.9rem;">Acceso para Masajistas y Administradores</p>
+      </div>
+
+      <div id="alert-box" style="display: none; padding: 0.8rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Correo Electrónico</label>
+          <input type="email" id="email" class="form-control" placeholder="ej. admin@spa.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" id="btn-login" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <div class="quick-access">
+        <span style="font-size: 0.8rem; color: #7F8C8D; font-weight: 600;">ACCESOS RÁPIDOS DE PRUEBA:</span>
+        <div class="quick-buttons">
+          <button type="button" class="btn btn-outline" style="flex: 1; font-size: 0.8rem;" onclick="setCredenciales('admin@spa.com', 'admin123')">
+            👤 Admin
+          </button>
+          <button type="button" class="btn btn-outline" style="flex: 1; font-size: 0.8rem;" onclick="setCredenciales('carlos@spa.com', 'masaje123')">
+            💆 Masajista
+          </button>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <a href="/views/index.html" style="font-size: 0.85rem; color: var(--primary-color);">
+          ← Volver al Portal Público
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Axios CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Cliente y Servicios -->
+  <script src="/public/assets/js/api/axiosClient.js"></script>
+  <script src="/public/assets/js/services/authService.js"></script>
+
+  <script>
+    function setCredenciales(email, pass) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = pass;
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      const alertBox = document.getElementById('alert-box');
+      const btn = document.getElementById('btn-login');
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Verificando...';
+        alertBox.style.display = 'none';
+
+        const res = await authService.login(email, pass);
+        if (res.ok) {
+          alertBox.style.display = 'block';
+          alertBox.style.backgroundColor = '#D4EFDF';
+          alertBox.style.color = '#196F3D';
+          alertBox.textContent = 'Acceso concedido. Redirigiendo al sistema...';
+
+          setTimeout(() => {
+            window.location.href = '/views/reservas.html';
+          }, 600);
+        }
+      } catch (err) {
+        alertBox.style.display = 'block';
+        alertBox.style.backgroundColor = '#FADBD8';
+        alertBox.style.color = '#78281F';
+        alertBox.textContent = err.mensaje || 'Credenciales inválidas. Intente nuevamente.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Iniciar Sesión';
+      }
+    });
+  </script>
+</body>
+</html>

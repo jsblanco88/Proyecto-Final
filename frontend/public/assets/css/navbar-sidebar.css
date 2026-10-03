@@ -1,0 +1,226 @@
+/**
+ * ==============================================================================
+ * HOJA DE ESTILOS: NAVBAR SUPERIOR Y SIDEBAR LATERAL (SISTEMA INTERNO)
+ * ==============================================================================
+ * 
+ * Implementa el diseño exacto mostrado en los diagramas de procesos para la
+ * navegación unificada y responsiva de Masoterapeutas y Administradores.
+ */
+
+/* ==========================================================================
+   SIDEBAR LATERAL (NAVEGACIÓN PRINCIPAL)
+   ========================================================================== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100vh;
+  background-color: #1A5276; /* Azul Oscuro Corporativo */
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #154360;
+}
+
+.sidebar-logo-icon {
+  font-size: 1.8rem;
+}
+
+.sidebar-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #FFFFFF;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 1rem 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  margin: 0.3rem 0.8rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1rem;
+  color: #D4E6F1;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.sidebar-link.active {
+  background-color: #2980B9;
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-link .menu-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+  color: #A9CCE3;
+  text-align: center;
+}
+
+/* ==========================================================================
+   NAVBAR SUPERIOR (HEADER Y ACCIONES RÁPIDAS)
+   ========================================================================== */
+.top-navbar {
+  height: 70px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navbar-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.navbar-tools {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-date-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #F8F9F9;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.navbar-date-picker input[type="date"] {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--dark-color);
+  cursor: pointer;
+}
+
+.navbar-date-picker input[type="date"]:focus {
+  outline: none;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: right;
+}
+
+.user-greeting {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.user-role-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.role-admin {
+  background-color: #E8F8F5;
+  color: #117A65;
+  border: 1px solid #A3E4D7;
+}
+
+.role-masoterapeuta {
+  background-color: #EBF5FB;
+  color: #2471A3;
+  border: 1px solid #AED6F1;
+}
+
+.btn-logout {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  background-color: #FDEDEC;
+  color: #C0392B;
+  border: 1px solid #FADBD8;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-logout:hover {
+  background-color: #C0392B;
+  color: #FFFFFF;
+}
+
+/* Responsividad móvil */
+@media (max-width: 900px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .main-wrapper {
+    margin-left: 0;
+  }
+}
