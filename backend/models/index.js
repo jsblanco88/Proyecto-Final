@@ -9,7 +9,7 @@
  * @module models/index
  */
 
-const { sequelize } = require('../config/database');
+const { sequelize, testConnection } = require('../config/database');
 
 const Usuario = require('./Usuario');
 const Sala = require('./Sala');
@@ -58,6 +58,7 @@ ConsumoInsumo.belongsTo(Cita, { foreignKey: 'cita_id', as: 'cita' });
 
 module.exports = {
   sequelize,
+  testConnection,
   Usuario,
   Sala,
   Cliente,
